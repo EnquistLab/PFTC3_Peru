@@ -1,8 +1,10 @@
-check_image <- function(file){
+check_image <- function(pathfile){
   require("exifr")
-
+  resolution <- 300
+  imageSize <- "2556x3513"
+  BitsPerSample <- 8 # colour depth
   
-  file <- basename(file)  
+  file <- basename(pathfile)  
   
   # check extension
   if(!grepl("([^\\s]+(\\.(jpg|jpeg))$)", file, ignore.case = TRUE)){
@@ -23,9 +25,21 @@ check_image <- function(file){
   
 
   # check exif information is good
+  exif <- read_exif(pathfile)
   #correct resolution
+  if(exif$XResolution != resolution | exif$YResolution != resolution){
+    stop("Scan resolution is ", exif$XResolution, " not expected ", resolution)
+  }
+  
   #correct size (with tolerance)
-  #colour depth
+  if(exif$ImageSize != imageSize){
+    stop("Scan size is ", exif$ImageSize, " pixcels not expected ", imageSize, " (A4)")
+  }
+
+    #colour depth
+  if(exif$BitsPerSample != BitsPerSample){
+    stop("Colour depth is ", exif$BitsPerSample, " bits not expected ", BitsPerSample, " (full colour)")
+  }
   
   #imagej check
   
