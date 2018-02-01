@@ -1,7 +1,7 @@
 library("tidyverse")
 library("writexl")
 
-source("envelope_codes.R")
+source("traits/Rdatagathering/envelope_codes.R")
 
 # Make List with ID
 dat <- all_codes %>% 
