@@ -47,8 +47,10 @@ check_image <- function(pathfile){
 }
   
 
-check_image("folder/good.jpgx")
-check_image("folder/AA1111.jpg")
-check_image("folder/AAA1111.jpg")
-check_image("folder/AAA4667.jpg")
+# check_image("folder/good.jpgx")
+# check_image("folder/AA1111.jpg")
+# check_image("folder/AAA1111.jpg")
+# check_image("folder/AAA4667.jpg")
 
+file <- read.table("new.txt")
+check_image(paste0(file$V1, file$V3))
