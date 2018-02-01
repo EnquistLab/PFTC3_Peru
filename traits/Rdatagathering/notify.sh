@@ -1,5 +1,5 @@
 #!/bin/sh
-cd /home/pi/peru
+cd /home/pi/peru/PFT3_Peru/traits/Rdatagathering
 while inotifywait -e create /home/pi/Desktop/ > new.txt; do
-  Rscript traits/Rdatagathering/check_image.R
+  Rscript check_image.R
   fi
