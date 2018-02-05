@@ -7,6 +7,7 @@ library("tidyverse")
 library("lubridate")
 library("readxl")
 library("assertr")
+library("gridExtra")
 
 # Source Data list and function
 source("traits/Rdatagathering/envelope_codes.R")
@@ -19,3 +20,7 @@ traits <- read_excel(path = "traits/data/TraitSpreadsheet_Template.xlsx", col_na
 
 # Check spreadsheet
 CheckSpreadsheet(dat = traits)
+
+
+# Draw some plots
+MakeSomePlots(traits)
