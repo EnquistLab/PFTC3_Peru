@@ -1,5 +1,4 @@
-check_image <- function(pathfile){
-  require("exifr")
+check_image <- function(pathfile, check_ij = TRUE){
   resolution <- 300
   imageSize <- "2556x3513"
   BitsPerSample <- 8 # colour depth
@@ -18,13 +17,16 @@ check_image <- function(pathfile){
   }
   file_base <- gsub("(^[A-Z]{3}\\d{4}).*", "\\1", file)
 
-  source("R/envelope_codes.R")# makes all_codes  
+  if(!exists(all_codes)){
+    source("envelope_codes.R")# makes all_codes  
+  }
   if(!file_base %in% all_codes$hashcode){
     stop("File name ", file, " not in list of permitted names")
   }
   
 
   # check exif information is good
+  require("exifr")
   exif <- read_exif(pathfile)
   #correct resolution
   if(exif$XResolution != resolution | exif$YResolution != resolution){
@@ -42,6 +44,9 @@ check_image <- function(pathfile){
   }
   
   #imagej check
+  if(isTRUE(check_ij)){
+    #to do
+  }
   
   print("Passed checks")
 }
@@ -51,6 +56,3 @@ check_image <- function(pathfile){
 # check_image("folder/AA1111.jpg")
 # check_image("folder/AAA1111.jpg")
 # check_image("folder/AAA4667.jpg")
-
-file <- read.table("new.txt")
-check_image(paste0(file$V1, file$V3))
