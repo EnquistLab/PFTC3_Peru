@@ -5,6 +5,7 @@ library("tidyverse")
 library("lubridate")
 library("readxl")
 library("assertr")
+library("gridExtra")
 
 # get all valid IDs
 source("traits/Rdatagathering/envelope_codes.R")
@@ -36,7 +37,7 @@ leaf.list <- c(1:5)
 
 
 
-# Function to test trait data
+#### Function to test trait data ####
 CheckSpreadsheet <- function(dat){
 
   out <- dat %>%
@@ -60,13 +61,13 @@ CheckSpreadsheet <- function(dat){
     assert(in_set(leaf.list), Leaf_nr, error_fun = error_report) %>% 
     
     # check values
-    verify(WetMass > DryMass, error_fun = error_report) %>% 
-    assert(within_bounds(0, Inf), WetMass, error_fun = error_report) %>%
-    assert(within_bounds(0, Inf), DryMass, error_fun = error_report) %>%
-    assert(within_bounds(0, Inf), LeafArea, error_fun = error_report) %>%
-    assert(within_bounds(0, Inf), Thickness1, error_fun = error_report) %>%
-    assert(within_bounds(0, Inf), Thickness2, error_fun = error_report) %>%
-    assert(within_bounds(0, Inf), Thickness3, error_fun = error_report) %>% 
+    verify(Wet_Mass_g > Dry_Mass_g, error_fun = error_report) %>% 
+    assert(within_bounds(0, Inf), Wet_Mass_g, error_fun = error_report) %>%
+    assert(within_bounds(0, Inf), Dry_Mass_g, error_fun = error_report) %>%
+    assert(within_bounds(0, Inf), Leaf_Area_cm2, error_fun = error_report) %>%
+    assert(within_bounds(0, Inf), Leaf_Thickness_1_mm, error_fun = error_report) %>%
+    assert(within_bounds(0, Inf), Leaf_Thickness_2_,mm, error_fun = error_report) %>%
+    assert(within_bounds(0, Inf), Leaf_Thickness_3_mm, error_fun = error_report) %>% 
   
   # Observation unique
     group_by(ID) %>% 
@@ -76,4 +77,50 @@ CheckSpreadsheet <- function(dat){
   
 }
 
+
+
+#### Function to plot some figures ####
+
+MakeSomePlots <- function(dat){
+  
+  # wet vs dry mass
+  p1 <- ggplot(dat, aes(x = Wet_Mass_g, y = Dry_Mass_g, color = Site)) + 
+    geom_point() +   
+    geom_abline(intercept = 0, slope = 1, colour = "red") +
+    scale_x_log10() + 
+    scale_y_log10()
+  
+  # dry vs area  
+  p2 <- ggplot(dat, aes(x = Dry_Mass_g, y = Leaf_Area_cm2, color = Site)) + 
+    geom_point() +   
+    geom_abline(intercept = 0, slope = 1, colour = "red") +
+    scale_x_log10() + 
+    scale_y_log10()
+  
+  p3 <- traits %>% 
+    mutate(Leaf_Thickness_Ave_mm = (Leaf_Thickness_1_mm + Leaf_Thickness_2_mm + Leaf_Thickness_3_mm)/3) %>% 
+    ggplot(aes(y = Leaf_Thickness_Ave_mm, x = Site)) + 
+    geom_boxplot()
+  
+  p4 <- ggplot(traits, aes(x = Leaf_Thickness_1_mm, y = Leaf_Thickness_2_mm, color = Site)) + 
+    geom_point() +   
+    geom_abline(intercept = 0, slope = 1, colour = "red") +
+    scale_x_log10() + 
+    scale_y_log10()
+  
+  p5 <- ggplot(traits, aes(x = Leaf_Thickness_1_mm, y = Leaf_Thickness_3_mm, color = Site)) + 
+    geom_point() +   
+    geom_abline(intercept = 0, slope = 1, colour = "red") +
+    scale_x_log10() + 
+    scale_y_log10()
+  
+  p6 <- ggplot(traits, aes(x = Leaf_Thickness_2_mm, y = Leaf_Thickness_3_mm, color = Site)) + 
+    geom_point() +   
+    geom_abline(intercept = 0, slope = 1, colour = "red") +
+    scale_x_log10() + 
+    scale_y_log10()
+  
+  grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 2)
+  
+}
 
