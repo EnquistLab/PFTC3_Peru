@@ -17,9 +17,8 @@ check_image <- function(pathfile, check_ij = TRUE){
   }
   file_base <- gsub("(^[A-Z]{3}\\d{4}).*", "\\1", file)
 
-  if(!exists("all_codes")){
-    source("envelope_codes.R")# makes all_codes  
-  }
+  load("envelope_codes.Rdata")# makes all_codes  
+
   if(!file_base %in% all_codes$hashcode){
     stop("File name ", file, " not in list of permitted names")
   }
