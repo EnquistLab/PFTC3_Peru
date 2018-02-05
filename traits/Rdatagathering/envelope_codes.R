@@ -1,6 +1,6 @@
 #generate_valid filenames
-library("tidyverse")
-library("R.utils")
+library("tidyverse", quietly = TRUE)
+library("R.utils", quietly = TRUE)
 
 all_codes <- crossing(A = LETTERS, B = LETTERS, C = LETTERS) %>% 
   mutate(code = paste0(A, B, C), 
