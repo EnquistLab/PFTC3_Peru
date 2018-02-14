@@ -35,6 +35,7 @@ vignettes/*.pdf
 *.sqlite
 *.dat
 *.RData.Tmp1
+!envelope_codes.Rdata
 
 #rasters & shapefiles
 *.bil

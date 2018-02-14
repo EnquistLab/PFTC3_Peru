@@ -1,5 +1,6 @@
 #generate_valid filenames
-library("tidyverse", quietly = TRUE)
+library("tidyr", quietly = TRUE)
+library("dplyr", quietly = TRUE)
 library("R.utils", quietly = TRUE)
 
 all_codes <- crossing(A = LETTERS, B = LETTERS, C = LETTERS) %>% 
@@ -8,3 +9,5 @@ all_codes <- crossing(A = LETTERS, B = LETTERS, C = LETTERS) %>%
          hash = withSeed(sample(hash), seed = 1),
          hash = formatC(hash, width = 4, format = "d", flag = "0"),
          hashcode = paste0(code, hash))
+
+save(all_codes, file = "traits/Rdatagathering/envelope_codes.Rdata")
