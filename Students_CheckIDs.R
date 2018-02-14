@@ -10,7 +10,7 @@ library("assertr")
 library("gridExtra")
 
 # Source Data list and function
-source("traits/Rdatagathering/envelope_codes.R")
+load("traits/Rdatagathering/envelope_codes.Rdata")
 
 
 # Read in spreadsheet

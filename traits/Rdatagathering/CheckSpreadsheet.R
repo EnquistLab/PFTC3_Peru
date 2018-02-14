@@ -8,7 +8,7 @@ library("assertr")
 library("gridExtra")
 
 # get all valid IDs
-source("traits/Rdatagathering/envelope_codes.R")
+load("traits/Rdatagathering/envelope_codes.Rdata")
 all_codes
 
 # Read in several tables
