@@ -1,6 +1,6 @@
 check_image <- function(pathfile, check_ij = TRUE){
   resolution <- 300
-  imageSize <- "2556x3513"
+  imageSize <- "2552x3508"
   BitsPerSample <- 8 # colour depth
   
   file <- basename(pathfile)  
@@ -17,7 +17,7 @@ check_image <- function(pathfile, check_ij = TRUE){
   }
   file_base <- gsub("(^[A-Z]{3}\\d{4}).*", "\\1", file)
 
-  load("envelope_codes.Rdata")# makes all_codes  
+  load("traits/Rdatagathering/envelope_codes.Rdata")# makes all_codes  
 
   if(!file_base %in% all_codes$hashcode){
     stop("File name ", file, " not in list of permitted names")
