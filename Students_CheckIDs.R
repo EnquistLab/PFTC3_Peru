@@ -2,20 +2,13 @@
 #### CODE TO CHECK SPREADSHEETS ####
 ####################################
 
-#### LOAD LIBRARIES
-library("tidyverse")
-library("lubridate")
-library("readxl")
-library("assertr")
-library("gridExtra")
-
-# Source Data list and function
-load("traits/Rdatagathering/envelope_codes.Rdata")
+# Source to load libraries, data lists and functions
+source("traits/Rdatagathering/CheckSpreadsheet.R")
 
 
 # Read in spreadsheet
 ### CHANGE PATH TO THE SPREADSHEET !!!
-traits <- read_excel(path = "traits/data/TraitSpreadsheet_Template.xlsx", col_names = TRUE)
+traits <- read_excel(path = "traits/data/TraitSpreadsheet_Template.xlsx")
 
 
 # Check spreadsheet
