@@ -5,22 +5,31 @@ check_image <- function(pathfile, check_ij = TRUE){
   
   file <- basename(pathfile)  
   
+  stop2 <- function(msg) {
+    x11()
+    plot(1, 1, type = "n", axes = FALSE, xlab = "", ylab = "")
+    title(main = paste(strwrap(msg, width = 30), collapse = "\n"), col.main = "red", line = -1)
+    Sys.sleep(5)
+    stop(msg)
+  }
+  
+
   # check extension
   if(!grepl("([^\\s]+(\\.(jpg|jpeg))$)", file, ignore.case = TRUE)){
-    stop("File extension on ", file, " not permitted - use '.jpg'")
+    stop2(paste0("File extension on ", file, " not permitted - use '.jpg'"))
   }
   
   # check file name is permitted
  
   if(!grepl("^[A-Z]{3}\\d{4}\\.(jpg|jpeg)$", file, ignore.case = TRUE)){
-    stop("File name ", file, " not expected format (3-letters, 4-numbers)")
+    stop2(paste0("File name ", file, " not expected format (3-letters, 4-numbers)"))
   }
   file_base <- gsub("(^[A-Z]{3}\\d{4}).*", "\\1", file)
 
-  load("traits/Rdatagathering/envelope_codes.Rdata")# makes all_codes  
+  load("envelope_codes.Rdata")# makes all_codes  
 
   if(!file_base %in% all_codes$hashcode){
-    stop("File name ", file, " not in list of permitted names")
+    stop2(paste0("File name ", file, " not in list of permitted names"))
   }
   
 
@@ -29,17 +38,17 @@ check_image <- function(pathfile, check_ij = TRUE){
   exif <- read_exif(pathfile)
   #correct resolution
   if(exif$XResolution != resolution | exif$YResolution != resolution){
-    stop("Scan resolution is ", exif$XResolution, " not expected ", resolution)
+    stop2(paste0("Scan resolution is ", exif$XResolution, " not expected ", resolution))
   }
   
   #correct size (with tolerance)
   if(exif$ImageSize != imageSize){
-    stop("Scan size is ", exif$ImageSize, " pixcels not expected ", imageSize, " (A4)")
+    stop2(paste0("Scan size is ", exif$ImageSize, " pixcels not expected ", imageSize, " (A4)"))
   }
 
     #colour depth
   if(exif$BitsPerSample != BitsPerSample){
-    stop("Colour depth is ", exif$BitsPerSample, " bits not expected ", BitsPerSample, " (full colour)")
+    stop2(paste0("Colour depth is ", exif$BitsPerSample, " bits not expected ", BitsPerSample, " (full colour)"))
   }
   
   #imagej check
