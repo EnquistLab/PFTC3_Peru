@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Peru Traits
+Comment=Setup for Peru Traits course leaf scanning
+Exec=/home/pi/peru/PFTC3_Peru/traits/Rdatagathering/leaf_scans.sh
+Icon=/home/pi//peru/PFTC3_Peru/traits/Rdatagathering/leaf_clip_art_thumb.png
+Terminal=true
+Type=Application
