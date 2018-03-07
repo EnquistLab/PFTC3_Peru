@@ -5,6 +5,10 @@ library("tidyverse")
 library("lubridate")
 library("tpl")
 
+
+# check which data can be merged
+# add units to variables
+
 #**********************************************************************************
 #### ALL_PRODUCTIVITY
 
@@ -17,9 +21,11 @@ vegetation <- vegetation %>%
   mutate(Fire = plyr::mapvalues(Fire, c("B", "U"), c("Burned", "Unburned"))) %>% 
   mutate(Fence = plyr::mapvalues(Fence, c("Uf", "F"), c("Unfenced", "Fenced")))
 
-ggplot(vegetation, aes(x = Fire, y = Diameter1)) +
-  geom_boxplot() +
-  facet_wrap(~ Fence)
+# create meta data
+MetaData <- vegetation %>% 
+  distinct(Site, Fire, Fence, Plot, Column, Quadrat)
+
+
 
 
 ### ABOVEGROUND BIOMASS
@@ -53,9 +59,11 @@ belowgrbiomass <- belowgrbiomass %>%
 
 
 ### CLIMATE
-climate <- read_excel("traits/data/All_productivity.xlsx", sheet = "Humedad-Temperatura")
-
 # MISSING COLUMN NAMES!!!
+# Only for November
+#climate <- read_excel("traits/data/All_productivity.xlsx", sheet = "Humedad-Temperatura")
+
+
 
 
 
@@ -77,7 +85,7 @@ species <- sp %>%
   rename(Code.Imma = Copdigo, SpeciesName = Especie)
 
 taxonomy <- plyr::ldply(strsplit(species$SpeciesName, " "), function(x){
-    data_frame(speciesName = paste(x[1:2], collapse = " "))
+  data_frame(speciesName = paste(x[1:2], collapse = " "))
 }) %>% 
   mutate(speciesName = gsub("\\(Less.\\)", "spp", speciesName))
 
@@ -89,15 +97,41 @@ tpl.get(taxonomy$speciesName)
 
 
 ### SPECIES COMPOSITION
+# import species list
+species <- read_excel("traits/data/immasdata/Species.xlsx")
+
+taxonomy.checks <- tpl.get(taxanomy$Species)
+fix.dictionary <- taxonomy.checks %>% 
+  filter(note == "was misspelled") %>% 
+  select(name, original.search)
+#Festuca dolichophylla, Perezia pungens, Halenia bella, Senecio rhizomatus, Ageratina cuzcoensis
+
+taxonomy <- species %>% 
+  mutate(Species = gsub(" \\(\\d\\)", "", Species)) %>% 
+  left_join(fix.dictionary, by = c("Species" = "original.search")) %>% 
+  # replace misspelled names
+  mutate(Species = ifelse(!is.na(name), name, Species)) %>% 
+  mutate(SpID = substr(Species, 1, 4))
+
+
 abundance <- read_excel("traits/data/immasdata/Species_comp.xlsx", sheet = "Species_comp")
-# fix year!!!
+
+abundance <- abundance %>% 
+  mutate(Year = substr(Date, 9, 10)) %>% 
+  mutate(Year = plyr::mapvalues(Year, c("10", "11", "12"), c(2010, 2011, 2012))) %>% 
+  mutate(Month = substr(Date, 6, 7)) %>%
+  mutate(Year = as.numeric(Year), Month = as.numeric(Month)) %>% 
+  gather(key = Species, value = Abundance, -Treatment, -Date) %>% 
+  left_join(MetaData, by = c("Treatment" = "Plot"))
+
+
 
 
 #**********************************************************************************
 #### ALL_MATRIX
 
 ### ABOVEGROUND BIOMASS
-agbiomass <- read_excel("traits/data/immasdata/All_matrix_2017-11-07.xlsx", sheet = "AGB_matrix")
+agbiomass <- read_excel("traits/data/immasdata/All_matrix_2017-11-08.xlsx", sheet = "AGB_matrix")
 
 agbiomass <- agbiomass %>% 
   rename(Site = SITE, Fire = FIRE, AGbiomass_Mg_ha = AGB.Tnha, AGbiomass_Mg_ha_month = AGB.Tnham) %>% 
@@ -105,7 +139,7 @@ agbiomass <- agbiomass %>%
   mutate(Fence = plyr::mapvalues(Fence, c("Uf", "F"), c("Unfenced", "Fenced")))
 
 ### BELOWGROUND BIOMASS
-bgbiomass <- read_excel("traits/data/immasdata/All_matrix_2017-11-07.xlsx", sheet = "BGB_matrix")
+bgbiomass <- read_excel("traits/data/immasdata/All_matrix_2017-11-08.xlsx", sheet = "BGP_matrix")
 
 bgbiomass <- bgbiomass %>% 
   rename(Site = SITE, Fire = FIRE, BGbiomass_Mg_ha = BGB.Tnha, BGbiomass_Mg_ha_month = BGB.Tnha.m) %>% 
@@ -129,5 +163,3 @@ npp <- read_excel("traits/data/immasdata/All_matrix_2017-11-07.xlsx", sheet = "N
 npp <- npp %>% 
   rename(AGP_Tn_ha = AGP, BGP_Tn_ha = BGP, NPP_Tn_ha = NPP) %>% 
   select(Year, Month, Treatment, Transect, AGP_Tn_ha, AGP.se, BGP_Tn_ha, BGP.se, NPP_Tn_ha, Npp.se) 
-
-
