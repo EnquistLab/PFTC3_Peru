@@ -7,7 +7,6 @@ library("tpl")
 pn <- . %>% print(n = Inf)
 
 
-
 #### COORDINATES ####
 coordinates <- read_excel("Coordinates_Peru_2018.xlsx")
 head(coordinates)
@@ -27,59 +26,109 @@ coords <- coordinates_2018 %>%
   group_by(Site) %>% 
   summarise(Lat = mean(Latitude), Long = mean(Longitude), Elev = mean(Elevation))
   
-#### SPECIES COVER ####
 
 
+
+#### SPECIES LIST ####
 
 # Read in species list and check names
-species <- read_excel("community/data/Base_de_Datos_Proyecto Puna_drive.xlsx")
-species <- species %>% 
-  mutate(Taxon = paste(Genero, Specie, sep = "_")) %>% 
-  mutate(Taxon = gsub("cf. ", "", Taxon)) %>% 
-  mutate(Taxon = gsub("\\.", "", Taxon)) %>% 
-  mutate(Taxon = gsub("NA_NA", "", Taxon)) %>% 
-  mutate(Taxon = gsub("_", " ", Taxon)) %>% 
-  mutate(Taxon = tolower(Taxon))
+species <- read_excel("community/data/2018-03-08-Species_List_2018.xlsx")
 
+species <- species %>% 
+  mutate(Species = gsub(" ", "_", Species))
   
 # Check names with species list, tpl
-sp.check <- tpl.get(species$Taxon)
+sp.check <- tpl.get(species$Species)
 
 sp.check %>% 
   select(name, note, original.search)
 
-cover <- read_excel("community/data/Peru.cover.data_Kopie.xlsx", sheet = "Cover", col_types = c("text", "text", "text", "numeric", "text", "numeric", "text", "text", "text", "text"))
 
-# Make species list
-cover %>% distinct(Site)
+
+#### SPECIES COVER ####
+cover <- read_excel("community/data/2018-03-07_Peru.cover.data.xlsx", sheet = "Cover", col_types = c("text", "text", "text", "numeric", "text", "numeric", "text", "text", "text", "text"))
 
 cover <- cover %>% 
-  mutate(cover2 = ifelse(cover == "0.0001", "NA", cover)) %>% 
   mutate(site = plyr::mapvalues(site, c("WAY", "ACJ", "PIL", "TRE", "QUE"), c("WAY_3100m", "ACJ_3400m", "PIL_3600m", "TRE_3700m", "QUE_3900m"))) %>% 
   mutate(site = factor(site, level = c("WAY_3100m", "ACJ_3400m", "PIL_3600m", "TRE_3700m", "QUE_3900m"))) %>% 
-  mutate(treatment = plyr::mapvalues(treatment, c("C", "B", "BB"), c("Control", "Burnt", "Double Burnt"))) %>%
-  mutate(treatment = factor(treatment, level = c("Control", "Burnt", "Double Burnt")))
+  mutate(treatment = plyr::mapvalues(treatment, c("C", "B", "BB"), c("Late", "Early", "Very Early"))) %>%
+  mutate(treatment = factor(treatment, level = c("Late", "Early", "Very Early"))) %>% 
+  left_join(species, by = c("species" = "Species"))
   
+
+
+
+# Calculate highest cover
+cover.max <- cover %>% 
+  group_by(site, species, treatment) %>% 
+  summarise(n = n(), mean = mean(cover, na.rm = TRUE), se = sd(cover, na.rm = TRUE)/sqrt(n)) %>% 
+  arrange(site, treatment, -mean, se)
+
+write_csv(cover.max, path = "community/data/scover.max.csv")
+
 
 ### Cover in each site and by treatment
 cover %>% 
   group_by(site, species, treatment) %>% 
-  summarise(mean.cover = mean(cover2, na.rm = TRUE)) %>% 
-  filter(!is.na(mean.cover)) %>% 
-  filter(species != "Stipa_ichu") %>% 
-  ggplot(aes(x = species, y = mean.cover, color = species)) +
+  summarise(n = n(), mean = mean(cover, na.rm = TRUE), se = sd(cover, na.rm = TRUE)/sqrt(n)) %>% 
+  filter(!is.na(mean)) %>% 
+  filter(site == "WAY_3100m", treatment == "Control") %>% 
+  ggplot(aes(x = species, y = mean, ymin = mean - se, ymax = mean + se, color = species)) +
   geom_point() +
-  facet_grid(treatment ~ site) +
+  geom_errorbar() +
+  labs(x = "", y = "Mean cover in %") +
+  #facet_grid(treatment ~ site) +
+  theme_bw() +
   theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
   
-# Number of species
-cover %>% 
-  group_by(site, treatment) %>% 
-  summarise(count = n()) %>% 
-  ggplot(aes(x = site, y = count, color = treatment)) +
-  geom_point() +
-  scale_color_manual(name = "Treatment", values = c("blue", "red", "orange"))
 
+# Cover by functional Group
+coverPlot <- cover %>% 
+  group_by(site, treatment, FunctionalGroup) %>% 
+  summarise(n = n(), mean = mean(cover, na.rm = TRUE), se = sd(cover, na.rm = TRUE)/sqrt(n)) %>%   
+  filter(!is.na(FunctionalGroup), treatment != "Double Burnt") %>% 
+  ggplot(aes(x = FunctionalGroup, y = mean, ymin = mean - se, ymax = mean + se, color = FunctionalGroup)) +
+  geom_point(size = 3) +
+  geom_errorbar() +
+  labs(x = "", y = "Mean cover in %") +
+  facet_grid(treatment ~ site) +
+  theme_bw() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size = 15),
+        axis.text=element_text(size = 15),
+        axis.title=element_text(size = 15))
+
+ggsave(coverPlot, filename = "cover.jpeg", dpi = 300)
+
+# Species richness
+total <- cover %>% 
+  group_by(site, treatment) %>% 
+  distinct(species) %>% 
+  summarise(total = n())
+
+richnessPlot <- cover %>% 
+  filter(!is.na(FunctionalGroup)) %>% 
+  left_join(total, by = c("site", "treatment")) %>%
+  group_by(site, treatment, FunctionalGroup) %>% 
+  summarise(count = n_distinct(species)) %>% 
+  ggplot(aes(x = FunctionalGroup, y = count, fill = FunctionalGroup)) +
+  geom_bar(stat="identity") +
+  labs(x = "", y = "Species richness (count)") +
+  geom_text(aes(x = 5, y = 12, label = "total = ")) +
+  facet_grid(treatment ~ site) +
+  theme_bw() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(size = 15),
+        axis.text=element_text(size = 15),
+        axis.title=element_text(size = 15))
+ggsave(richnessPlot, filename = "richness.jpeg", dpi = 300)
+
+unique(cover$species)
+
+
+# Get distinct species list
 sp.list.2018 <- cover %>% distinct(species) %>% 
   mutate(species = tolower(species)) %>% 
   mutate(species = gsub("_", " ", species)) %>% 
