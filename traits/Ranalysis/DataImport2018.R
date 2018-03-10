@@ -6,7 +6,6 @@ library("tpl")
 
 pn <- . %>% print(n = Inf)
 
-
 #### COORDINATES ####
 coordinates <- read_excel("Coordinates_Peru_2018.xlsx")
 head(coordinates)
@@ -65,7 +64,6 @@ cover <- cover %>%
 # according to TNRS: Pseudognaphalium ramosissimum <- Gnaphalium ramosissimum
 
 cover <- cover %>% 
-  left_join(sp.correct, by = c("species" = "old.sp")) %>% 
   mutate(species = gsub("Acaena_cylindrystachya", "Acaena_cylindristachya", species),
          species = gsub("Paspallum_bonplandianum", "Paspalum_bonplandianum", species),
          species = gsub("Rhynchosphora_macrochaeta", "Rhynchospora_macrochaeta", species),
@@ -114,7 +112,7 @@ coverPlot <- cover %>%
         axis.text=element_text(size = 15),
         axis.title=element_text(size = 15))
 
-ggsave(coverPlot, filename = "cover.jpeg", dpi = 300)
+ggsave(coverPlot, filename = "cover.jpeg", dpi = 300, height = 8, width = 12)
 
 # Species richness
 total <- cover %>% 
@@ -138,7 +136,7 @@ richnessPlot <- cover %>%
         text = element_text(size = 15),
         axis.text=element_text(size = 15),
         axis.title=element_text(size = 15))
-ggsave(richnessPlot, filename = "richness.jpeg", dpi = 300)
+ggsave(richnessPlot, filename = "richness.jpeg", dpi = 300, height = 8, width = 12)
 
 unique(cover$species)
 cover %>% group_by(functionalGroup) %>% summarise(count = n_distinct(species))
@@ -154,3 +152,19 @@ sp.list.2018 <- cover %>% distinct(species) %>%
 
 write_csv(sp.list.2018, path = "community/sp.list.2018.csv")
 
+
+
+cover %>% 
+  filter(functionalGroup != c("Lichen", "Bryophytes")) %>% 
+  group_by(site, successionalStage, plot) %>% 
+  summarise(n = n()) %>% 
+  group_by(site) %>% 
+  summarise(mean = mean(n))
+
+
+cover %>% 
+  filter(functionalGroup != c("Lichen", "Bryophytes")) %>% 
+  group_by(site, successionalStage, plot) %>% 
+  summarise(n = n()) %>% 
+  group_by(site) %>% 
+  summarise(mean = mean(n))
