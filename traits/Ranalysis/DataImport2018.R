@@ -150,33 +150,33 @@ LeafArea2018 <- LeafArea.raw %>%
   summarise(Area_cm2 = sum(LeafArea)) %>% 
   # remove duplicate/tripilcante scans
   mutate(Area_cm2 = ifelse(ID == "BCE2654", Area_cm2 / 3, Area_cm2)) %>% # triple scan
-  mutate(Area_cm2 = ifelse(ID == "AGX5711", Area_cm2 / 2, Area_cm2)) %>% # double scan
+  mutate(Area_cm2 = ifelse(ID == "AGX5711", Area_cm2 / 2, Area_cm2)) # double scan
 
   
   
 #### LEAF TRAITS ####
 traits0 <- read_excel(path = "traits/data/LeafArea_Peru_18-03-2018_SMK.xlsx")
-traits1 <- read_excel(path = "traits/data/LeafArea_Peru_2018_AI.xlsx")
-traits2 <- read_excel(path = "traits/data/LeafArea_Peru_2018_AST.xlsx")
-traits2 <- traits2 %>% mutate(Date = as.Date(Date, format = "%d.%m.%Y"))
-traits3 <- read_excel(path = "traits/data/LeafArea_Peru_2018_EK.xlsx")
-traits4 <- read_excel(path = "traits/data/LeafArea_Peru_2018_IO.xlsx")
-traits4 <- traits4 %>% mutate(Date = as.Date(Date, format = "%d.%m.%Y"))
-traits5 <- read_excel(path = "traits/data/LeafArea_Peru_2018_SMK.xlsx")
-traits6 <- read.csv(file = "traits/data/LeafArea_Peru_2018_TEM_18.03.2018.csv", header = TRUE, sep = ";")
-traits7 <- read_excel(path = "traits/data/LeafArea_Peru_2018_TEM.xlsx")
-traits7 <- traits7 %>% mutate(Date = as.Date(Date, format = "%d.%m.%Y"))
-traits8 <- read_excel(path = "traits/data/LeafArea_Peru_2018_VZ_2.xlsx")
-traits9 <- read_excel(path = "traits/data/LeafArea_Peru_2018_VZ.xlsx")
-
-
+traits1 <- read_excel(path = "traits/data/LeafArea_Peru_19-03-2018_SMK.xlsx")
+traits2 <- read_excel(path = "traits/data/LeafArea_Peru_2018_AI.xlsx")
+traits3 <- read_excel(path = "traits/data/LeafArea_Peru_2018_AST.xlsx")
+traits3 <- traits3 %>% mutate(Date = as.Date(Date, format = "%d.%m.%Y"))
+traits4 <- read_excel(path = "traits/data/LeafArea_Peru_2018_EK.xlsx")
+traits5 <- read_excel(path = "traits/data/LeafArea_Peru_2018_ErikAlyssa.xlsx")
+traits6 <- read_excel(path = "traits/data/LeafArea_Peru_2018_IO.xlsx")
+traits6 <- traits6 %>% mutate(Date = as.Date(Date, format = "%d.%m.%Y"))
+traits7 <- read_excel(path = "traits/data/LeafArea_Peru_2018_KL.xlsx")
+traits7 <- traits7 %>% mutate(Date = as.Date(Date, format = "%d/%m/%Y"))
+traits8 <- read_excel(path = "traits/data/LeafArea_Peru_2018_SMK.xlsx")
+traits9 <- read_excel(path = "traits/data/LeafArea_Peru_2018_TEM_19.03.2018.xlsx")
+traits9 <- traits9 %>% mutate(Date = as.Date(Date, format = "%d.%m.%Y"))
+traits10 <- read_excel(path = "traits/data/LeafArea_Peru_2018_VZ_2.xlsx")
+traits11 <- read_excel(path = "traits/data/LeafArea_Peru_2018_VZ.xlsx")
 
 # Merge tables
 traits.raw <- traits1 %>% 
-  rbind(traits2, traits3, traits4, traits5, traits7, traits8, traits9) %>% 
+  rbind(traits2, traits3, traits4, traits5, traits6, traits7, traits8, traits9, traits10, traits11) %>% 
   filter(!is.na(ID)) # remove empty rows
-### Fix CSV!!!
-
+save(traits.raw, file = "traits/data/traits.raw.Rdata")
 
 # Merge traits and LeafArea  and clean data
 traits <- traits.raw %>% 
