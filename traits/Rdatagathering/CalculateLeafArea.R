@@ -128,10 +128,6 @@ LeafArea %>%
 
 
 
-### CHECK FERNS!!!
-
-
-
 #### Sean leaf areas without loop
 
 file.list.sean <- list.files(path = "C:/Users/cpo082/Desktop/leaf
