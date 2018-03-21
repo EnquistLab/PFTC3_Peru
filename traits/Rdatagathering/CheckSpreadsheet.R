@@ -17,10 +17,10 @@ all_codes
 
 
 # Data lists
-nr.col <- 18
+nr.col <- 20
 ID.list <- all_codes$hashcode # MAKE AN OPTION TO SLECT CERTAIN ROWS
 date.list <- ymd(c("2018-03-23"))
-character.list <- c("Site", "Genus", "Species", "Project", "Experiment")
+character.list <- c("Site", "Genus", "Species", "Experiment")
 numeric.list <- c("Elevation", "Plot", "Individual_nr", "Leaf_nr", "Leaf_Area_cm2", "Wet_Mass_g", "Dry_Mass_g", "Leaf_Thickness_1_mm", "Leaf_Thickness_2_mm", "Leaf_Thickness_3_mm")
 site.list <- c("WAY", "AJA", "PIL", "TRE")
 elevation.list <- c(3085, 3450, 3670, 3900)
@@ -54,7 +54,7 @@ CheckSpreadsheet <- function(dat){
     #assert(in_set(genus.list), Genus, error_fun = error_report) %>% 
     #assert(in_set(species.list), Species, error_fun = error_report) %>% 
     assert(in_set(elevation.list), Elevation, error_fun = error_report) %>% 
-    assert(in_set(project.list), Project, error_fun = error_report) %>% 
+    #assert(in_set(project.list), Project, error_fun = error_report) %>% 
     assert(in_set(experiment.list), Experiment, error_fun = error_report) %>%
     assert(in_set(plot.list), Plot, error_fun = error_report) %>% 
     assert(in_set(individual.list), Individual_nr, error_fun = error_report) %>%
