@@ -1,36 +1,21 @@
 
 ### CALCULATE LEAF AREA
-#devtools::install_github("richardjtelford/LeafArea")
 
+# load libraries
+devtools::install_github("richardjtelford/LeafArea")
 library(LeafArea)
-
-
-# Calculate leaf area
-list.of.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-list.of.files16 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/16_03_2018"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-list.of.files17 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/17_03_2018"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-list.of.files18 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/18_03_18"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-new.folder <- "/Volumes/PFT3/Temp"
-output.folder <- "/Volumes/PFT3/Output"
-output.folder <- "/Volumes/PFT3/Output16"
-output.folder <- "/Volumes/PFT3/Output17"
-output.folder <- "/Volumes/PFT3/Output18"
-
-# test run.ij
-#run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 120, save.image = TRUE)
-
 
 # Function to calculate leaf area
 loop.files <-  function(files){
   
   file.copy(files, new.folder)
   #if(grepl("-NA$", files)){
-    #newfile <- basename(files)
-    #file.rename(paste0(new.folder, "/", newfile), paste0(new.folder,
-                                                         #"/", gsub("-NA$", "", newfile)))
+  #newfile <- basename(files)
+  #file.rename(paste0(new.folder, "/", newfile), paste0(new.folder,
+  #"/", gsub("-NA$", "", newfile)))
   #}
   print(files)
-  area <- try(run.ij(set.directory = new.folder, distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 200, save.image = TRUE))
+  area <- try(run.ij(set.directory = new.folder, distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 50, trim.pixel2 = 150, save.image = TRUE))
   if(inherits(area, "try-error")){
     return(data.frame(LeafArea = NA))
   }
@@ -41,15 +26,42 @@ loop.files <-  function(files){
   return(res)
 }
 
+
+# test run.ij
+run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.005, trim.pixel = 50, trim.pixel2 = 150, save.image = TRUE)
+
+
+### DELETE
+#list.of.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+#list.of.files16 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/16_03_2018"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+#list.of.files17 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/17_03_2018"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+#list.of.files18 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/18_03_18"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+#list.of.files19 <- dir(path = paste0("/Volumes/PFT3/Peru_leaves/19_03_18"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+#new.folder <- "/Volumes/PFT3/Temp"
+#output.folder <- "/Volumes/PFT3/Output"
+#output.folder <- "/Volumes/PFT3/Output16"
+#output.folder <- "/Volumes/PFT3/Output17"
+#output.folder <- "/Volumes/PFT3/Output18"
+#output.folder <- "/Volumes/PFT3/Output19"
+
 #LeafArea <- plyr::ldply(list.of.files, loop.files)
 #LeafArea16 <- plyr::ldply(list.of.files16, loop.files)
 #LeafArea17 <- plyr::ldply(list.of.files17, loop.files)
-LeafArea18 <- plyr::ldply(list.of.files18, loop.files)
-dim(LeafArea)
-LeafArea.raw <- LeafArea.raw %>% 
+#LeafArea18 <- plyr::ldply(list.of.files18, loop.files)
+#LeafArea19 <- plyr::ldply(list.of.files19, loop.files)
+#LeafArea.raw <- LeafArea.raw %>% 
   #select(ID, LeafArea) %>% 
-  rbind(LeafArea18)
+  #rbind(LeafArea19)
 
+
+# Calculate leaf area
+list.of.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+new.folder <- "/Volumes/PFT3/Temp"
+output.folder <- "/Volumes/PFT3/Output_Peru_28-5-2018"
+
+LeafArea.raw <- plyr::ldply(list.of.files, loop.files)
+
+dim(LeafArea.raw)
 save(LeafArea.raw, file = "traits/data/LeafArea.raw.Rdata")
 
 # remove duplicate leaves
