@@ -21,6 +21,7 @@ ID.list <- all_codes$hashcode
 setdiff(LeafArea2018$ID, ID.list)
 setdiff(traits$ID, ID.list)
 
+
 #### Source to load libraries, data lists and functions ####
 source("traits/Rdatagathering/CheckSpreadsheet.R")
 CheckSpreadsheet(dat = traits)
@@ -72,3 +73,22 @@ traits %>%
   ggplot(aes(x = Leaf_thickness_1_mm, y = Leaf_thickness_3_mm, color = Genus)) +
   geom_point() + 
   facet_grid(Site ~ Experiment)
+
+
+
+
+all.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+length(all.files)
+all.files <- all.files %>% as.tibble
+all.files <- all.files %>% 
+  mutate(ID = basename(value)) %>% 
+  mutate(ID = substr(ID, 1, 7))
+
+dim(traits.raw)
+traits.raw %>% 
+  anti_join(all.files, by = "ID")
+
+
+setdiff(all.files$ID, ID.list)
+setdiff(traits.raw$ID, ID.list)
+
