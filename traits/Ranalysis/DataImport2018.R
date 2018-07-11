@@ -154,8 +154,16 @@ write_csv(Species.list.field, path = "community/Species.list.field.csv")
 load("traits/data/LeafArea.raw.Rdata", verbose = TRUE)
 LeafArea2018 <- LeafArea.raw %>% 
   mutate(ID = substr(ID, 1, 7)) %>% 
+  
+  # Remove non leaf parts of scan
   filter(!(ID == "BZW1631" &  LeafArea == 104.434)) %>% # remove large area, is black area on scan
-  filter(ID != "VJD1110") %>% # double scan (other leaf is BDJ1110, where ID is also wrong)
+  filter(!(ID == "EUO3529" & LeafArea == 0.192)) %>% # remove small part, cable on scan
+  filter(!(ID == "AOF7984" & LeafArea == 0.187)) %>% # remove part, non leaf on scan
+  
+  # remove double scan (other leaf is BDJ1110, where ID is also wrong)
+  filter(ID != "VJD1110") %>% 
+  
+  # Fix leafID
   mutate(ID = gsub("ECV!179", "ECV1792", ID),
          ID = gsub("BAT0442", "BAT9442", ID),
          ID = gsub("BEZ1256", "BEZ1356", ID),
@@ -178,14 +186,19 @@ LeafArea2018 <- LeafArea.raw %>%
          ID = gsub("GNK310.", "GNK3140", ID),
          ID = gsub("HBVO473", "HBV0473", ID),
          ID = gsub("egg2246", "EGG2246", ID)) %>% 
+  
+  # Sum areas for each ID
   group_by(ID) %>% 
   summarise(Area_cm2 = sum(LeafArea)) %>% 
-  # remove duplicate/tripilcante scans
-  mutate(Area_cm2 = ifelse(ID == "BCE2654", Area_cm2 / 3, Area_cm2)) %>% # triple scan
-  mutate(Area_cm2 = ifelse(ID == "AGX5711", Area_cm2 / 2, Area_cm2)) # double scan
 
-  
-  
+  # replace LeafArea with NA - empty or corrupted scan
+  mutate(Area_cm2 = ifelse(ID == "AUB2092", NA, Area_cm2)) %>% 
+  add_row(ID = "BMB7274", Area_cm2 = NA) %>% 
+  add_row(ID = "EHP2066", Area_cm2 = NA) %>% 
+  add_row(ID = "FDF1809", Area_cm2 = NA)
+
+
+
 #### LEAF TRAITS ####
 files <- dir(path = "traits/data/", pattern = "\\.xlsx$", full.names = TRUE)
 traits.raw <- files[grepl("^(?!~)", basename(files), perl = TRUE)] %>% 
@@ -266,12 +279,19 @@ traits <- traits.raw %>%
   ### FIXING COMMENTS
   mutate(Comment = ifelse(ID == "ENF3830", paste(Comment, "_dirt"), Comment)) %>% 
   
-  
   ### FLAG DATA
   ## AREAFLAG
   mutate(AreaFlag = ifelse(ID == "BOT1325", "DryLeaf_wrongArea", "")) %>%  # leaf was very dry, wrong area
   mutate(AreaFlag = ifelse(ID %in% c("ECN1410", "EPV0866", "FCC3736", "FDL7538"), "LeafOutside_wrongArea", "")) %>%   # Leaf on ruler or on edge - nothing one can do about it - area flag
   mutate(AreaFlag = ifelse(ID == "EMY0414", "TooLargeArea", "")) %>% # Lycopodiella, more than2 branches scanned
+  # Part missing on scan - wrong area
+  mutate(AreaFlag = ifelse(ID %in% c("CZL9321", "DUO6664", "DWL3144", "DWV2987", "EFU8488", "EPV0866", "EPW2330", "ERV6823", "ERW0817", "EUG2994", "HHV3850"), "Cut_wrongArea", "")) %>% 
+
+  # Empty or corrupted scan
+  mutate(AreaFlag = ifelse(ID == "BMB7274", "EmptyScan_noArea", "")) %>% 
+  mutate(AreaFlag = ifelse(ID == "EHP2066", "CorruptedScan_noArea", "")) %>% 
+  mutate(AreaFlag = ifelse(ID == "FDF1809", "CorruptedScan_noArea", "")) %>% 
+  mutate(AreaFlag = ifelse(ID == "AUB2092", "ScannedOnWrongSide_noArea", "")) %>% 
   
   ## DRYWEIGHTFLAG
   mutate(DryFlag = ifelse(ID == "EMY0414", "TooLargeWeight", "")) %>%  # Lycopodiella, more than2 branches scanned
@@ -314,8 +334,9 @@ traits.fixed.genus <- traits %>%
          Genus = gsub("Niphogetum", "Niphogeton", Genus),
          Genus = gsub("Oerithales", "Oreithales", Genus)) 
   
-
 save(traits.fixed.genus, file = "traits.fixed.genus.Rdata")
+
+
 
 traits.fixed.genus %>% 
   select(Genus) %>% arrange(Genus) %>% distinct(Genus) %>% pn
