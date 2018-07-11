@@ -54,3 +54,5 @@ vignettes/*.pdf
 
 
 *.DS_Store
+*traits/Rdatagathering/LeafAreaChecking/DataImport2018_TEM.R
+*traits/Rdatagathering/LeafAreaChecking/Plants.crop.README.txt
