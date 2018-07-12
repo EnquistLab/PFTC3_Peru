@@ -59,20 +59,28 @@ traits %>% filter(is.na(Area_cm2)) %>% distinct(ID)
 
 # Draw plots
 
-traits %>%  
+traits %>% 
   ggplot(aes(x = Wet_mass_g, y = Area_cm2, color = Genus)) +
   geom_point() + 
-  facet_grid(Site ~ Experiment)
+  scale_x_log10() + 
+  scale_y_log10() +
+  facet_grid(~ Site) +
+  theme(legend.position="none")
 
 traits %>%  
   ggplot(aes(x = Height_cm, y = Wet_mass_g, color = Genus)) +
-  geom_point()
+  geom_point() +
+  scale_y_log10() +
+  facet_grid(~ Site) +
+  theme(legend.position="none")
 
 traits %>% 
-  left_join(LeafArea2018, by = "ID") %>% 
   ggplot(aes(x = Leaf_thickness_1_mm, y = Leaf_thickness_3_mm, color = Genus)) +
   geom_point() + 
-  facet_grid(Site ~ Experiment)
+  scale_x_log10() + 
+  scale_y_log10() +
+  facet_grid(~ Site) +
+  theme(legend.position="none")
 
 
 
