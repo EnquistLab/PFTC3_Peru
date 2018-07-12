@@ -254,23 +254,32 @@ traits <- traits.raw %>%
   left_join(LeafArea2018, by = "ID") %>% 
   
   ### FIX WRONG DATA
+  # Dates
+  mutate(Date = ifelse(Date == "2018-05-15", "2018-03-15", Date)) %>% 
+  
+  # Site name
   mutate(Site = plyr::mapvalues(Site, c("AJC", "PIL", "WAY", "ACJ", "TRE", "QUE", "Wayqecha", "Way", "QYE"), c("ACJ", "PIL", "WAY", "ACJ", "TRE", "QUE", "WAY", "WAY", "QUE"))) %>% 
+  
   # Fix elevation (WAY:3100m; ACJ:3475m; PIL:3675m ; TRE:3715m; QUE:3888m)
-  mutate(Elevation = ifelse(Site == "PIL" & Elevation %in% c(2675, 3600, 3647, 3650, 3670, 3700), 3675, Elevation)) %>% #probably add 3475, but it's ACJ elevation
+  mutate(Elevation = ifelse(Site == "PIL" & Elevation %in% c(2675, 3400, 3600, 3647, 3650, 3670, 3700), 3675, Elevation)) %>% #probably add 3475, but it's ACJ elevation
   mutate(Elevation = ifelse(Site == "ACJ" & Elevation %in% c(3400, 3457, 3465, 3467, 3474, 3487, 3567, 3600, 3440), 3475, Elevation)) %>% 
   mutate(Elevation = ifelse(Site == "TRE" & Elevation %in% c(3700, 3701, 3702, 3710), 3715, Elevation)) %>% 
   mutate(Elevation = ifelse(Site == "QUE" & Elevation %in% c(3800, 3900), 3888, Elevation)) %>% 
   
+  # Project
+  mutate(Project = ifelse(Project %in% c("Sean", "sean", "SEAN"), "SEAN", Project)) %>% 
+  mutate(Project = ifelse(ID %in% c("EYX1643", "EOT2012", "EOR9773"), "SEAN", Project)) %>% 
+  
   # missing experiment
-  mutate(Project = ifelse(ID %in% c("EYX1643", "EOT2012"), "SEAN", Project)) %>% 
   mutate(Experiment = ifelse(ID %in% c("EYX1643", "EOT2012"), "", Experiment)) %>% 
   mutate(Experiment = ifelse(ID == "ETC9124", "C", Experiment)) %>% 
   mutate(Experiment = plyr::mapvalues(Experiment, 
                                       c("B", "Burn", "BB", "C", "c", "E", "EARLY", "Early", "early", "early-E", "L", "LATE", "Late", "late", "missing experiment"), 
                                       c("B", "B", "BB", "C", "C","B", "B", "B", "B", "B", "C", "C", "C", "C", NA))) %>% 
+  
   # wrong individual number
-  ### CHECK IF I DO NOT OVERWRITE THE ACTUAL IND_NR 5!!!!
-  mutate(Individual_nr = ifelse(Site == "WAY" & Genus == "Eriosorus" & Experiment == "C" & Plot == 2, 5, Individual_nr)) %>%  
+  mutate(Individual_nr = ifelse(Site == "WAY" & Genus == "Eriosorus" & Experiment == "C" & Plot == 2 & Individual_nr == 6, 5, Individual_nr)) %>%  
+  mutate(Individual_nr = ifelse(Individual_nr == 15, 5, Individual_nr)) %>% 
   
   ### CALCULATE AREA, SLA, etc.
   # Sisyrinchium: leaves are folded: area needs to be doubled and leaf thickness halfed!!!!
@@ -336,6 +345,19 @@ traits.fixed.genus <- traits %>%
   
 save(traits.fixed.genus, file = "traits.fixed.genus.Rdata")
 
+Genus == "Werneria", Species == "nubigena", Experiment == "B", Plot == 1, Individual_nr == 2 -> QUE not ACj
+
+###
+# TO DO !!!
+# not enough envelopes, wrong ind_nr 6: traits.fixed.genus %>% filter(Site == "PIL", Genus == "Carex", Experiment == "C", Plot == 5)
+
+# Werneria nubigena, B, Plot 1, Ind_nr 1 has no site???
+
+
+traits <- traits.fixed.genus %>%
+  filter(is.na(Project), !is.na(Site)) %>% 
+  mutate(Site = factor(Site, levels = c("WAY", "ACJ", "PIL", "TRE", "QUE")))
+  
 
 
 traits.fixed.genus %>% 
@@ -370,7 +392,5 @@ Melpomene NA = Melpomene sp?
 Paspalum bonplandianum=Paspalum Sean=Paspalum sp. ???
 Rhynchosphora 5 different spellings
 
-  EOR9773 -> project sean
   
-
 ### some 17.3.2018 QEL are actually WAY
