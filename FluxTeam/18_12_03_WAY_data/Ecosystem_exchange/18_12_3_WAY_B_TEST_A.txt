@@ -1,0 +1,10 @@
+Mar 12 2018 at 8:50:40
+Frequency: 1.00Hz.
+CO2
+Zero:  Value:0.91  Date:May 19 2009 at 7:53:33 AM
+Span:  Value:1.00  Date:May 19 2009 at 8:00:06 AM
+H2O
+Zero:  Value:0.77  Date:May 19 2009 at 7:54:01 AM
+Span:  Value:1.01  Date:28 Jun 2004	 at 08:29:05	
+Testing Monday outside plots
+	Relative Time	Temperature	Pressure	Aux Input	CO2 Absorptance	CO2 mmol/m3	CO2 mg/m3	CO2 umol/mol	H2O Absorptance	H2O mmol/m3	H2O g/m3	H2O mmol/mol	H2O(°C)	Cooler Voltage
