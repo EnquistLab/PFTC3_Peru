@@ -1,0 +1,35 @@
+List of measurements to exclude:
+
+18/3/12:
+-
+
+18/3/13	- PIL:
+-B2_REDO.txt	-PAR Change
+-B3.txt		-Cloud cover, equilibrium w/resp
+
+18/3/14:
+-T1.txt		-Wonky 'U' shape
+-T3.txt 	-First encounter with condensation
+-T3resp.txt	-First encounter with condensation
+-T3_REDO.txt 	-Troubleshooting condensation
+-T3_REDO3.txt	-Dummy photo for respo redo
+-T3_REDOresp.txt  -Troubleshooting condensation
+-T3_REDO2resp.txt -Troubleshooting condensation
+
+18/3/15:
+-
+
+18/3/16:
+-
+
+18/3/17:
+-B1_REDO2.txt	-Average plot1 photosynthesis Redo's
+-B1resp.txt	-Bad data and crashes nls()
+-B5.txt		-Use REDO
+-
+
+i) Generate parametric distribution for each species
+ii) Use abundances (biomass/cover) of individual species to sample each species distribution
+iii) Generate parametric distribution for the distribution of distributions
+iv) Repeat (iii) a large number of times to bootstrap the community distribution
+v) Calculate the moments of the community distribution
