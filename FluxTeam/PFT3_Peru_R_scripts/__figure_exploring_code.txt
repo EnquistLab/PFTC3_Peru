@@ -1,0 +1,72 @@
+
+### Density plots of k observations (change k to variable, change Type to site, treatment) ###
+  library("ggplot2")
+  ggplot(data.1, aes(x = k)) + 
+    geom_density() + 
+    facet_wrap(~Type) 
+
+
+### Scatterplot of data - for exploration  ###
+
+
+q <- ggplot(data.1, aes(x=environmental_variable, 
+                                y=flux_type, 
+                                colour=site))+    #colour=Type for at få farve også på outliers
+          geom_point(size = 6) +
+                    theme_classic() +
+          theme(panel.border = element_rect(colour = "black", fill=NA, size=0),
+                panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank(),
+                axis.line = element_line(colour = "black", size=0),
+                axis.ticks.length = unit(.25, "cm"),
+                axis.ticks = element_line(size=0.75),
+                text = element_text(size=25, colour = "black"),
+                axis.title.x = element_text(size=25, margin = margin(t = 30, b = 20)), #vjust not working??
+                axis.title.y = element_text(size=25, margin = margin(t = 20, b = 20, r = 30)),
+                axis.text.x = element_text(margin = margin(t = 15)),
+                axis.text.y = element_text(margin = margin(r = 15))) +
+          #scale_fill_gradientn(breaks=c("0", "1", "2", "3"), 
+                          # labels=c("Mixed", "Low", "Medium", "High")) +
+          #scale_x_discrete(breaks=c("0", "1", "2", "3"),
+                         #  labels=c("Mixed", "Low", "Medium", "High")) +
+          #scale_y_continuous(breaks=seq(0,40,5)) +       ## use expand = c(0,0) here for removing space under bars
+          labs(x = (expression(paste(
+            "environmental variable"))), 
+               y = (expression(paste(
+                 "flux_type")))) +
+          geom_smooth(method=lm,   #or use 'loess' for moving
+                      se=TRUE,
+                      color="red")
+        
+  q
+
+
+
+### Boxplots of data - when all is said and done ### 
+
+
+p <- ggplot(data.1, 
+                    aes(x=reorder(Location, Moist_Mean), 
+                        y=Moist_Mean, 
+                        fill=Shrub_gradient))+    #colour=Type for at få farve også på outliers
+         # geom_boxplot() +
+          #theme(axis.text.x = element_text(angle=90))
+        geom_boxplot(notch = FALSE, outlier.size = 3) + 
+          theme_classic() +
+          theme(panel.border = element_rect(colour = "black", fill=NA, size=0),
+                panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank(),
+                axis.line = element_line(colour = "black", size=0),
+                axis.ticks.length = unit(.25, "cm"),
+                axis.ticks = element_line(size=0.75),
+                text = element_text(size=25, colour = "black"),
+                axis.title.x = element_text(size=25, margin = margin(t = 30, b = 20)), #vjust not working??
+                axis.title.y = element_text(size=25, margin = margin(t = 20, b = 20, r = 30)),
+                axis.text.x = element_text(margin = margin(t = 15)),
+                axis.text.y = element_text(margin = margin(r = 15)),
+                legend.position="none") +
+          scale_x_discrete(breaks=c("0", "1", "2", "3"),
+                           labels=c("Mixed", "Low", "Medium", "High")) +
+          scale_y_continuous(breaks=seq(0,100,10)) +       ## use expand = c(0,0) here for removing space under bars
+          labs(x = "Individual sites", y = "Soil moisture (vol%)")
+        p
