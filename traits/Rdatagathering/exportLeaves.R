@@ -5,12 +5,11 @@ Export_Species <- traits.cover %>%
   select(Site, Elevation, family, Genus, Species, Experiment, Plot, Individual_nr, ID, Nr_leaves) %>% 
   mutate(Nr_leaves = ifelse(is.na(Nr_leaves), 1, Nr_leaves)) %>% 
   left_join(coords, by = "Site") %>% 
-  select(-Elev) %>% 
-  group_by(Site, Elevation, Lat, Long, family, Genus, Species) %>% 
-  summarize(Number_Plants = n(), AllIDs = paste(ID, collapse = ", "), Nr_Leaf = paste(Nr_leaves, collapse = ", ")) %>% 
+  select(Site, Elevation, Lat, Long, family, Genus, Species, ID, Nr_leaves) %>% 
+  #summarize(Number_Plants = n(), AllIDs = paste(ID, collapse = ", "), Nr_Leaf = paste(Nr_leaves, collapse = ", ")) %>% 
+  mutate(Nr_leaves = ifelse(Nr_leaves == "8 cm", 1, Nr_leaves)) %>% 
   arrange(Site, Elevation, family, Genus)
   
-
 writexl::write_xlsx(x = Export_Species, path = "ExportSpeciesList.xlsx")
 
 
