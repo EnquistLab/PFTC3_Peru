@@ -17,10 +17,13 @@ coordinates_2018 <- coordinates %>%
   mutate(Site = substr(name, 1, 3)) %>%
   mutate(Plot = substr(name, nchar(name), nchar(name))) %>%
   mutate(Treatment = substr(name, nchar(name)-2, nchar(name)-1)) %>%
-  mutate(Treatment = gsub(" ", "", Treatment))
+  mutate(Treatment = gsub(" ", "", Treatment)) %>% 
+  select(-name, -Time) %>% 
+  group_by(Site) %>% 
+  summarise(Latitude = mean(Latitude),
+            Longitude = mean(Longitude))
 
-save(file = "Coordinates_2018.Rdata", coordinates_2018)
-
+# for export leaves
 coords <- coordinates_2018 %>% 
   group_by(Site) %>% 
   summarise(Lat = mean(Latitude), Long = mean(Longitude), Elev = mean(Elevation))
@@ -105,12 +108,7 @@ cover.max <- cover %>%
   summarise(n = n(), mean = mean(cover, na.rm = TRUE), se = sd(cover, na.rm = TRUE)/sqrt(n)) %>% 
   arrange(site, successionalStage, -mean, se)
 
-write_csv(cover.max, path = "community/data/scover.max.csv")
-
-
-
-unique(cover$species)
-cover %>% group_by(functionalGroup) %>% summarise(count = n_distinct(species))
+#write_csv(cover.max, path = "community/data/scover.max.csv")
 
 
 # Get distinct species list
@@ -120,8 +118,7 @@ sp.list.2018 <- cover %>% distinct(species) %>%
   left_join(species, by = c("species" = "Taxon")) %>% 
   select(species, Family)
   
-
-write_csv(sp.list.2018, path = "community/sp.list.2018.csv")
+#write_csv(sp.list.2018, path = "community/sp.list.2018.csv")
 
 
 
@@ -161,7 +158,7 @@ LeafArea2018 <- LeafArea.raw %>%
   filter(!(ID == "AOF7984" & LeafArea == 0.187)) %>% # remove part, non leaf on scan
   
   # remove double scan (other leaf is BDJ1110, where ID is also wrong)
-  filter(ID != "VJD1110") %>% 
+  filter(ID != "VJD1110") %>%
   
   # Fix leafID
   mutate(ID = gsub("ECV!179", "ECV1792", ID),
@@ -189,13 +186,16 @@ LeafArea2018 <- LeafArea.raw %>%
   
   # Sum areas for each ID
   group_by(ID) %>% 
-  summarise(Area_cm2 = sum(LeafArea)) %>% 
+  summarise(Area_cm2 = sum(LeafArea), NumberLeavesScan = n()) %>% 
 
   # replace LeafArea with NA - empty or corrupted scan
   mutate(Area_cm2 = ifelse(ID == "AUB2092", NA, Area_cm2)) %>% 
   add_row(ID = "BMB7274", Area_cm2 = NA) %>% 
   add_row(ID = "EHP2066", Area_cm2 = NA) %>% 
   add_row(ID = "FDF1809", Area_cm2 = NA)
+
+# No trait data
+#"AGT5582" "BTB2511" "CPI9081" "CPK9020" "CPQ5646" "CPZ0354" "CQA3676" "CRW2022" "CYQ2950" "CYR3353" "DGT8067" "DGW6179" "DGY8804" "FIR0498" "FIW3669" "BMB7274"
 
 
 
@@ -205,10 +205,12 @@ traits.raw <- files[grepl("^(?!~)", basename(files), perl = TRUE)] %>%
   set_names(basename(.)) %>% 
   map_df(read_excel, col_types = c("text", "date", "text", "numeric", rep("text", 4), rep("numeric", 8), "text", "numeric", "text"), .id = "file")
 
-save(traits.raw, file = "traits/data/traits.raw.Rdata")
+#save(traits.raw, file = "traits/data/traits.raw.Rdata")
+load("traits/data/traits.raw.Rdata", verbose = TRUE)
 
 # Merge traits and LeafArea  and clean data
 traits <- traits.raw %>% 
+  
   ### FIX WROND LEAF ID's
   mutate(ID = gsub("WSY0063", "ESY0063", ID),
          ID = gsub("EEA7841", "EAA7841", ID),
@@ -229,7 +231,7 @@ traits <- traits.raw %>%
          ID = gsub("FAG3940", "FAG3950", ID),
          ID = gsub("CQ06175", "CQO6175", ID),
          ID = gsub("DQO712", "DQO7122", ID),
-         ID = gsub("CZZ7222", "DQO7122", ID),
+         ID = gsub("CZZ7222", "CCZ7222", ID),
          ID = gsub("BDG9657", "BGD9657", ID),
          ID = gsub("DBE080", "DBE0880", ID),
          ID = gsub("CHK3202", "CHK3203", ID),
@@ -250,43 +252,133 @@ traits <- traits.raw %>%
          ID = gsub("HKL5161", "HKL5191", ID)) %>% 
   filter(!is.na(ID)) %>% # remove 46 lines that have ID as NA, empty rows
   
-  ### JOIN TRAITS WITH LEAF AREA
-  left_join(LeafArea2018, by = "ID") %>% 
+  # REMOVE DUPLICATE ENTRIES
+  # Remove duplicate entries of envelopes, exact same information
+  group_by(ID, Site, Elevation, Genus, Species, Project, Experiment, Plot, Individual_nr, Height_cm, Wet_mass_g, Dry_mass_g, Leaf_thickness_1_mm, Leaf_thickness_2_mm, Leaf_thickness_3_mm, Bulk, Nr_leaves) %>% 
+  mutate(n = n()) %>% 
+  filter(n == 1) %>% 
+  ungroup() %>% 
   
-  ### FIX WRONG DATA
+  # Remove double entry
+  filter(!(ID == "ESK2822" & Species == "P"),
+         !(ID == "DOR6678" & file == "LeafArea_Peru_2018_IO.xlsx")) %>%
+  mutate(ID = ifelse((ID == "BTK6307" & Height_cm == 68), "", ID)) %>% 
+  
+  ### FIX WRONG VARIABLES AND DATA
   # Dates
   mutate(Date = ifelse(Date == "2018-05-15", "2018-03-15", Date)) %>% 
   
   # Site name
   mutate(Site = plyr::mapvalues(Site, c("AJC", "PIL", "WAY", "ACJ", "TRE", "QUE", "Wayqecha", "Way", "QYE"), c("ACJ", "PIL", "WAY", "ACJ", "TRE", "QUE", "WAY", "WAY", "QUE"))) %>% 
+  mutate(Site = ifelse(ID == "AVX6287", "QUE", Site),
+         Site = ifelse(ID == "AVY2694", "QUE", Site),
+         Site = ifelse(ID == "DVA3114", "ACJ", Site),
+         Site = ifelse(ID == "DNW0546", "PIL", Site),
+         Site = ifelse(ID == "DOA7686", "PIL", Site),
+         Site = ifelse(ID == "FAG3940", "PIL", Site)) %>% 
   
   # Fix elevation (WAY:3100m; ACJ:3475m; PIL:3675m ; TRE:3715m; QUE:3888m)
   mutate(Elevation = ifelse(Site == "PIL" & Elevation %in% c(2675, 3400, 3600, 3647, 3650, 3670, 3700), 3675, Elevation)) %>% #probably add 3475, but it's ACJ elevation
   mutate(Elevation = ifelse(Site == "ACJ" & Elevation %in% c(3400, 3457, 3465, 3467, 3474, 3487, 3567, 3600, 3440), 3475, Elevation)) %>% 
   mutate(Elevation = ifelse(Site == "TRE" & Elevation %in% c(3700, 3701, 3702, 3710), 3715, Elevation)) %>% 
-  mutate(Elevation = ifelse(Site == "QUE" & Elevation %in% c(3800, 3900), 3888, Elevation)) %>% 
+  mutate(Elevation = ifelse(Site == "QUE" & Elevation %in% c(3400, 3800, 3900), 3888, Elevation)) %>% 
+    mutate(Elevation = ifelse(ID == "EOR9773", 3675, Elevation),
+           Elevation = ifelse(ID == "DNS2332", 3675, Elevation)) %>% 
+    mutate(Comment = ifelse(ID == "EOR9773", "Elevation wrong on envelope, assume Site was right", Comment),
+           Comment = ifelse(ID == "DNS2332", "Elevation wrong on envelope, assume Site was right", Comment)) %>% 
+  mutate(Elevation = ifelse(ID %in% c("ARN1263", "AVY2694"), 3888, Elevation),
+         Elevation = ifelse(ID == "EOX9894", 3100, Elevation),
+         Elevation = ifelse(ID == "EYW8013", 3675, Elevation)) %>% 
   
   # Project
-  mutate(Project = ifelse(Project %in% c("Sean", "sean", "SEAN"), "SEAN", Project)) %>% 
-  mutate(Project = ifelse(ID %in% c("EYX1643", "EOT2012", "EOR9773"), "SEAN", Project)) %>% 
+  mutate(Project = ifelse(Project %in% c("Sean", "sean", "SEAN"), "Sean", Project)) %>% 
+  mutate(Project = ifelse(ID %in% c("EYX1643", "EOT2012", "EOR9773"), "Sean", Project)) %>% 
   
   # missing experiment
   mutate(Experiment = ifelse(ID %in% c("EYX1643", "EOT2012"), "", Experiment)) %>% 
   mutate(Experiment = ifelse(ID == "ETC9124", "C", Experiment)) %>% 
   mutate(Experiment = plyr::mapvalues(Experiment, 
-                                      c("B", "Burn", "BB", "C", "c", "E", "EARLY", "Early", "early", "early-E", "L", "LATE", "Late", "late", "missing experiment"), 
-                                      c("B", "B", "BB", "C", "C","B", "B", "B", "B", "B", "C", "C", "C", "C", NA))) %>% 
+                                      c("b", "B", "Burn", "BB", "C", "c", "E", "EARLY", "Early", "early", "early-E", "L", "LATE", "Late", "late", "missing experiment"), 
+                                      c("B", "B", "B", "BB", "C", "C","B", "B", "B", "B", "B", "C", "C", "C", "C", NA))) %>% 
+  mutate(Experiment = ifelse(ID == "DBI7438", "B", Experiment),
+         Experiment = ifelse(ID == "AML7186", "C", Experiment),
+         Experiment = ifelse(ID == "DHX2100", "C", Experiment),
+         Experiment = ifelse(ID == "DMU7088", "B", Experiment),
+         Experiment = ifelse(ID == "BEC2276", "B", Experiment),
+         Experiment = ifelse(ID == "ELN5788", "C", Experiment),
+         Experiment = ifelse(ID == "BJL6171", "B", Experiment),
+         Plot = ifelse(ID == "BJL6171", 2, Plot),
+         Individual_nr = ifelse(ID == "BJL6171", 3, Individual_nr),
+         Experiment = ifelse(ID %in% c("FCY6830", "FCV3487"), "BB", Experiment),
+         Experiment = ifelse(ID == "EZC2604", "BB", Experiment),
+         Experiment = ifelse(ID == "EZW1995", "B", Experiment)
+         ) %>% 
+  
+  # Plot
+  mutate(Plot = ifelse(ID == "DBF4177", 3, Plot)) %>% 
   
   # wrong individual number
   mutate(Individual_nr = ifelse(Site == "WAY" & Genus == "Eriosorus" & Experiment == "C" & Plot == 2 & Individual_nr == 6, 5, Individual_nr)) %>%  
   mutate(Individual_nr = ifelse(Individual_nr == 15, 5, Individual_nr)) %>% 
   
+  
+  ### JOIN TRAITS WITH LEAF AREA
+  left_join(LeafArea2018, by = "ID") %>% 
+  
+  
+  ### MAKE DATA TALK TO OTHER PFTC DATA
+  # !!! Sisyrinchium: leaves are folded: area needs to be doubled and leaf thickness halfed !!!!
+  mutate(Bulk = ifelse(ID == "FAJ4238", "bulk", Bulk)) %>% 
+  
+  # rename variables
+  mutate(Dry_Mass_g = NA) %>% ### REMOVE THIS ONCE DRY MASS IS HERE!!!!
+  rename(NrLeaves = Nr_leaves, Plant_Height_cm = Height_cm, Treatment = Experiment, PlotID = Plot, Wet_Mass_g = Wet_mass_g, Leaf_Thickness_1_mm = Leaf_thickness_1_mm, Leaf_Thickness_2_mm = Leaf_thickness_2_mm, Leaf_Thickness_3_mm = Leaf_thickness_3_mm, Leaf_Area_cm2 = Area_cm2) %>% 
+  
+  # Create new variables
+  mutate(Country = "PE",
+         Year = 2018,
+         Gradient = 1,
+         Project = ifelse(is.na(Project), "T", Project),
+         NrLeaves = ifelse(is.na(NrLeaves), 1, NrLeaves)) %>% 
+  
+  left_join(coordinates_2018, by = "Site") %>% 
+  
   ### CALCULATE AREA, SLA, etc.
-  # Sisyrinchium: leaves are folded: area needs to be doubled and leaf thickness halfed!!!!
+  # Species with leaf number = > Leaf nr = 1 because of calculations below
+  mutate(NrLeaves = ifelse(Genus %in% c("Baccharis", "Huperzia", "Lycopodiella", "Lycopodium"), 1, NrLeaves)) %>%
   
+  # Fix wrong values
+  mutate(Wet_Mass_g = ifelse(ID == "DKQ1911", NA, Wet_Mass_g),
+         Leaf_Thickness_1_mm = ifelse(ID == "AUV6280", 0.136, Leaf_Thickness_1_mm),
+         Leaf_Thickness_1_mm = ifelse(ID == "AZC6125", 0.15, Leaf_Thickness_1_mm),
+         Leaf_Thickness_1_mm = ifelse(ID == "AFA0030", 0.181, Leaf_Thickness_1_mm),
+         Leaf_Thickness_1_mm = ifelse(ID == "HHX0541", 0.13, Leaf_Thickness_1_mm),
+         Leaf_Thickness_3_mm = ifelse(ID == "BJQ2059", 0.346, Leaf_Thickness_3_mm),
+         Leaf_Thickness_3_mm = ifelse(ID == "BUX0491", 0.231, Leaf_Thickness_3_mm),
+         Leaf_Thickness_3_mm = ifelse(ID == "CAE9465", 0.228, Leaf_Thickness_3_mm),
+         Leaf_Thickness_3_mm = ifelse(ID == "DAE4308", 0.656, Leaf_Thickness_3_mm),
+         Leaf_Thickness_3_mm = ifelse(ID == "AMW1331", 0.445, Leaf_Thickness_3_mm)) %>% 
   
-  ### FIXING COMMENTS
-  mutate(Comment = ifelse(ID == "ENF3830", paste(Comment, "_dirt"), Comment)) %>% 
+  # Calculate values on the leaf level (mostly bulk samples)
+  rename(Wet_Mass_Total_g = Wet_Mass_g,
+         Dry_Mass_Total_g = Dry_Mass_g,
+         Leaf_Area_Total_cm2 = Leaf_Area_cm2) %>% 
+  mutate(Wet_Mass_g = Wet_Mass_Total_g / NrLeaves,
+         Dry_Mass_g = Dry_Mass_Total_g / NrLeaves,
+         Leaf_Area_cm2 = Leaf_Area_Total_cm2 / NrLeaves) %>%
+  
+  # Calculate SLA, LMDC
+  mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
+         SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
+         LDMC = Dry_Mass_g / Wet_Mass_g) %>% 
+         
+         
+    ### FIXING COMMENTS
+  mutate(Comment = ifelse(ID == "ENF3830", paste(Comment, "_dirt"), Comment),
+         Comment = ifelse(ID == "EHP2066", paste(Comment, "empty_scan", sep = ";_"), Comment),
+         Comment = ifelse(ID == "AWE1352", "scan_missing", Comment),
+         Comment = ifelse(ID == "CVV7522", "smallLeaf_NoWetMass", Comment),
+         Comment = ifelse(is.na(Leaf_Area_Total_cm2), paste(Comment, "Missing scan", sep = "; "), Comment)) %>% 
   
   ### FLAG DATA
   ## AREAFLAG
@@ -297,7 +389,8 @@ traits <- traits.raw %>%
   mutate(AreaFlag = ifelse(ID %in% c("CZL9321", "DUO6664", "DWL3144", "DWV2987", "EFU8488", "EPV0866", "EPW2330", "ERV6823", "ERW0817", "EUG2994", "HHV3850"), "Cut_wrongArea", "")) %>% 
 
   # Empty or corrupted scan
-  mutate(AreaFlag = ifelse(ID == "BMB7274", "EmptyScan_noArea", "")) %>% 
+  mutate(AreaFlag = ifelse(ID == "BMB7274", "EmptyScan_noArea", ""),
+         AreaFlag = ifelse(is.na(Leaf_Area_Total_cm2), paste(AreaFlag, "Missing scan", sep = "; "), AreaFlag)) %>% 
   mutate(AreaFlag = ifelse(ID == "EHP2066", "CorruptedScan_noArea", "")) %>% 
   mutate(AreaFlag = ifelse(ID == "FDF1809", "CorruptedScan_noArea", "")) %>% 
   mutate(AreaFlag = ifelse(ID == "AUB2092", "ScannedOnWrongSide_noArea", "")) %>% 
@@ -305,12 +398,12 @@ traits <- traits.raw %>%
   ## DRYWEIGHTFLAG
   mutate(DryFlag = ifelse(ID == "EMY0414", "TooLargeWeight", "")) %>%  # Lycopodiella, more than2 branches scanned
 
-## WETWEIGHTFLAG
-mutate(WetFlag = ifelse(ID == "EMY0414", "TooLargeWeight", "")) # Lycopodiella, more than2 branches scanned
+  ## WETWEIGHTFLAG
+  mutate(WetFlag = ifelse(ID == "EMY0414", "TooLargeWeight", ""),
+         WetFlag = ifelse(ID == "CVV7522", "TooSmallWeight", ""),
+         WetFlag = ifelse(ID == "DKQ1911", "TooSmallWeight", ""))   # Lycopodiella, more than2 branches scanned
 
-sp <- traits %>% 
-  select(Genus) %>% arrange(Genus) %>% distinct(Genus)
-write.csv(sp, file = "sp.csv")
+
 
 traits.fixed.genus <- traits %>% 
   mutate(Genus = gsub("Achemilla|Alchemilla ", "Alchemilla", Genus),
@@ -341,33 +434,31 @@ traits.fixed.genus <- traits %>%
          Genus = gsub("Myconia", "Miconia", Genus),
          Genus = gsub("Gamachaeta", "Gamochaeta", Genus),
          Genus = gsub("Niphogetum", "Niphogeton", Genus),
-         Genus = gsub("Oerithales", "Oreithales", Genus)) 
-  
+         Genus = gsub("Oerithales", "Oreithales", Genus)) %>% 
+  mutate(Taxon = paste(Genus, Species, sep = " ")) %>% 
+# Sort (!!!ADD DRY_MASS_TOTAL_G IF THAT EXISTS!!!!)
+  select(ID, Country, Year, Project, Treatment, Site, Elevation, Latitude, Longitude, Gradient, PlotID, Taxon, Genus, Species, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Bulk, NrLeaves, NumberLeavesScan, AreaFlag, DryFlag, WetFlag, Comment)
+
 save(traits.fixed.genus, file = "traits.fixed.genus.Rdata")
 
-Genus == "Werneria", Species == "nubigena", Experiment == "B", Plot == 1, Individual_nr == 2 -> QUE not ACj
 
-###
 # TO DO !!!
-# not enough envelopes, wrong ind_nr 6: traits.fixed.genus %>% filter(Site == "PIL", Genus == "Carex", Experiment == "C", Plot == 5)
-
-# Werneria nubigena, B, Plot 1, Ind_nr 1 has no site???
-
-
-traits <- traits.fixed.genus %>%
-  filter(is.na(Project), !is.na(Site)) %>% 
-  mutate(Site = factor(Site, levels = c("WAY", "ACJ", "PIL", "TRE", "QUE")))
-  
+### One leaf withouth ID
+#"BMB7274" empty scan
+traits.raw %>% filter(ID == "AHB8755")
+LeafArea2018 %>% filter(ID == "AHB8755")
 
 
-traits.fixed.genus %>% 
-  select(Genus) %>% arrange(Genus) %>% distinct(Genus) %>% pn
+traits.fixed.genus %>% filter(is.na(PlotID), Project != "Sean") %>% select(ID, Site, PlotID, Individual_nr, Taxon, Genus)
+
+traits.fixed.genus %>% group_by(ID) %>% mutate(n = n()) %>% filter(n > 1) %>% arrange(ID) %>% select(ID, Treatment, Site, Elevation, PlotID, Individual_nr)
 
 
-traits.cover <- traits.fixed.genus %>% 
-  left_join(all.cover, by = c("Site" = "site", "Plot" = "plot", "Experiment" = "treatment", "Genus" = "genus"))
-save(traits.cover, file = "traits.cover.Rdata")
-traits.cover %>% filter(is.na(cover))
+
+
+sp <- traits %>% 
+  select(Genus) %>% arrange(Genus) %>% distinct(Genus)
+#write.csv(sp, file = "sp.csv")
 
 library("taxize")
 names <- gnr_resolve(names = sp$Genus, db = "tnrs")
