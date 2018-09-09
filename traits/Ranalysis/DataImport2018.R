@@ -353,11 +353,19 @@ traits <- traits.raw %>%
          Leaf_Thickness_1_mm = ifelse(ID == "AZC6125", 0.15, Leaf_Thickness_1_mm),
          Leaf_Thickness_1_mm = ifelse(ID == "AFA0030", 0.181, Leaf_Thickness_1_mm),
          Leaf_Thickness_1_mm = ifelse(ID == "HHX0541", 0.13, Leaf_Thickness_1_mm),
+         Leaf_Thickness_1_mm = ifelse(ID == "EAT7036", 0.09, Leaf_Thickness_1_mm),
+         Leaf_Thickness_1_mm = ifelse(ID == "FAE4104", 0.065, Leaf_Thickness_1_mm),
+         Leaf_Thickness_1_mm = ifelse(ID == "AWH2532", 0.172, Leaf_Thickness_1_mm),
+         Leaf_Thickness_1_mm = ifelse(ID == "HHX0541", 0.013, Leaf_Thickness_1_mm),
+         Leaf_Thickness_2_mm = ifelse(ID == "HHX0541", 0.016, Leaf_Thickness_2_mm),
+         Leaf_Thickness_2_mm = ifelse(ID == "DTQ4241", 0.07, Leaf_Thickness_2_mm),
+         Leaf_Thickness_2_mm = ifelse(ID == "BUK1560", 0.031, Leaf_Thickness_2_mm),
          Leaf_Thickness_3_mm = ifelse(ID == "BJQ2059", 0.346, Leaf_Thickness_3_mm),
          Leaf_Thickness_3_mm = ifelse(ID == "BUX0491", 0.231, Leaf_Thickness_3_mm),
          Leaf_Thickness_3_mm = ifelse(ID == "CAE9465", 0.228, Leaf_Thickness_3_mm),
          Leaf_Thickness_3_mm = ifelse(ID == "DAE4308", 0.656, Leaf_Thickness_3_mm),
-         Leaf_Thickness_3_mm = ifelse(ID == "AMW1331", 0.445, Leaf_Thickness_3_mm)) %>% 
+         Leaf_Thickness_3_mm = ifelse(ID == "AMW1331", 0.445, Leaf_Thickness_3_mm),
+         Leaf_Thickness_3_mm = ifelse(ID == "DZL1521", 0.1, Leaf_Thickness_3_mm)) %>% 
   
   # Calculate values on the leaf level (mostly bulk samples)
   rename(Wet_Mass_Total_g = Wet_Mass_g,
@@ -378,7 +386,10 @@ traits <- traits.raw %>%
          Comment = ifelse(ID == "EHP2066", paste(Comment, "empty_scan", sep = ";_"), Comment),
          Comment = ifelse(ID == "AWE1352", "scan_missing", Comment),
          Comment = ifelse(ID == "CVV7522", "smallLeaf_NoWetMass", Comment),
-         Comment = ifelse(is.na(Leaf_Area_Total_cm2), paste(Comment, "Missing scan", sep = "; "), Comment)) %>% 
+         Comment = ifelse(is.na(Leaf_Area_Total_cm2), paste(Comment, "Missing scan", sep = "; "), Comment),
+         Comment = ifelse(Comment %in% c("CER2406", "HHD4231", "HHC7286", "AER8651", "BZH8056", "HGH0916", "AUO1998", "BRH4842", "AVZ7114", "AYO1679", "AFG9783", "DTF5574", "CZT2801"), paste(Comment, "ThinLeaf_value_from_envelope", sep = "; "), Comment),
+         Comment = ifelse(Comment %in% c("EFM5927", "ENH3749", "ENG3094", "EZO8107"), paste(Comment, "ThickLeaf_value_from_envelope", sep = "; "), Comment),
+         Comment = ifelse(ID %in% c("EFG2323", "FHL2051"), "NerveMeasured_tooThick", Comment)) %>% 
   
   ### FLAG DATA
   ## AREAFLAG
@@ -406,6 +417,7 @@ traits <- traits.raw %>%
 
 
 traits.fixed.genus <- traits %>% 
+  # Fix Genus names
   mutate(Genus = gsub("Achemilla|Alchemilla ", "Alchemilla", Genus),
          Genus = gsub("Belonathus|Belonauthus", "Belonanthus", Genus),
          Genus = gsub("Calamagostus", "Calamagrostis", Genus),
@@ -416,8 +428,7 @@ traits.fixed.genus <- traits %>%
          Genus = gsub("Geufiaua|Geutiana", "Gentiana", Genus),
          Genus = gsub("Hypocheris|Hypoehaens", "Hypochaeris", Genus),
          Genus = gsub("Hypsophila", "Hysophila", Genus),
-         Genus = gsub("Lysopomia", "Lysipomia", Genus),
-         Genus = gsub("Melpome|Melpone", "Melpomene", Genus),
+         Genus = gsub("Lysopomia|Lysipania", "Lysipomia", Genus),
          Genus = gsub("Nertera |Netera", "Nertera", Genus),
          Genus = gsub("Orchio|Orquidede|Orchid", "Orchidaceae", Genus),
          Genus = gsub("Oritrophilum|Oritrophium|Orithrophium", "Oritrophium", Genus),
@@ -431,13 +442,76 @@ traits.fixed.genus <- traits %>%
          Genus = gsub("new", "New", Genus),
          Genus = gsub("Neurol", "Neurolepis", Genus),
          Genus = gsub("Paspalum", "Paspallum", Genus),
-         Genus = gsub("Myconia", "Miconia", Genus),
+         Genus = gsub("Myconia|Mycomia", "Miconia", Genus),
          Genus = gsub("Gamachaeta", "Gamochaeta", Genus),
          Genus = gsub("Niphogetum", "Niphogeton", Genus),
          Genus = gsub("Oerithales", "Oreithales", Genus)) %>% 
+  
+  mutate(Genus = ifelse(Genus == "Melpome", "Melpomene", Genus),
+         Genus = ifelse(Genus == "Melpone", "Melpomene", Genus)) %>% 
+
+  # Fix Species names
+  mutate(Species = ifelse(is.na(Species), "sp", Species)) %>% 
+  
+  mutate(Species = gsub("sp.", "sp", Species),
+         Species = gsub("green|spgreen", "spGreen", Species),
+         
+         Species = gsub("erodifolia", "erodiifolia", Species),
+         Species = gsub("genisteloides", "genistelloides", Species),
+         Species = gsub("caesptosa", "caespitosa", Species),
+         Species = gsub("audicola", "andicola", Species),
+         Species = gsub("lamatus|lanata", "lanatus", Species),
+         Species = gsub("cheilanthoides|cheilauthoides|chelianthoides", "cheilantoides", Species),
+         Species = gsub("blomerata|glmoerata", "glomerata", Species),
+         Species = gsub("sessilifolium", "sessiliflorum", Species),
+         Species = gsub("audinus", "andinum", Species),
+         Species = gsub("raraxacoides|taraxaciodes|taroxacoides", "taraxacoides", Species),
+         Species = gsub("w/bract", "bract", Species),
+         Species = gsub("raccimosa|racemose", "racemosa", Species),
+         Species = gsub("integrafolia", "integrifolia", Species),
+         Species = gsub("hieraciodes", "hieracioides", Species),
+         Species = gsub("macrophazea", "macrocephala", Species),
+         Species = gsub("silverstris|sylvestris", "silvestris", Species),
+         Species = gsub("aquilineum", "aquilinum", Species),
+         Species = gsub("cuscoensis", "cuzcoensis", Species),
+         Species = gsub("nugibena", "nubigena", Species),
+         
+         Species = ifelse((Genus == "Agrostis" & Species == 1), "sp1", Species),
+         Species = ifelse((Genus == "Agrostis" & Species == 2), "sp2", Species),
+         Species = ifelse((Genus == "Agrostis" & Species == 4), "sp4", Species),
+         Species = ifelse((Genus == "Agrostis" & Species == "norwegian"), "spNorwegian", Species),
+         Species = ifelse((Genus == "Agrostis" & Species == "spnorwegian"), "spNorwegian", Species),
+         Species = ifelse((Genus == "Agrostis" & Species == "spnorweigan"), "spNorwegian", Species),
+         Species = ifelse((Genus == "Asteraceae" & Species == "hairy leaf"), "sphairyleaf", Species),
+         Species = ifelse((Genus == "Bromus" & Species == "1 blue"), "spBlue", Species),
+         Species = ifelse((Genus == "Bromus" & Species == "blue"), "spBlue", Species),
+         Species = ifelse((Genus == "Bromus" & Species == "sp (blue)"), "spBlue", Species),
+         Species = ifelse((Genus == "Bromus" & Species == "sp Blue"), "spBlue", Species),
+         Species = ifelse((Genus == "Bromus" & Species == "spblue"), "spBlue", Species),
+         Species = ifelse((Genus == "Calamagrostis" & Species == "q"), "Q", Species),
+         Species = ifelse((Genus == "Calamagrostis" & Species == "spq"), "Q", Species),
+         Species = ifelse((Genus == "Calamagrostis" & Species == "2"), "sp2", Species),
+         Species = ifelse((Genus == "Calamagrostis" & Species == "3"), "sp3", Species),
+         Species = ifelse((Genus == "Elaphoglossum" & Species == "narrow"), "spnarrow", Species),
+         Species = ifelse((Genus == "Luzula" & Species == "broad"), "spbroad", Species),
+         #Species = ifelse((Genus == "Luzula" & Species == "wide"), "spbroad", Species),
+         #Species = ifelse((Genus == "Luzula" & Species == "narrow"), "spnarrow", Species),
+         Species = ifelse((Genus == "Paspalum" & Species == "Sean"), "sp", Species),
+         Species = ifelse((Genus == "Poa" & Species == "spunknown"), "unknown", Species),
+         Species = ifelse((Genus == "Senecio" & Species == "sp 2"), "sp2", Species),
+         Species = ifelse((Genus == "Viola" & Species == "pygmae|pygmaeaa"), "pygmaea", Species),
+         Species = ifelse((Genus == "Unknown" & Species == "hairy leaves"), "hairy leaf", Species)
+         # Calamagrostis, Carex, Luzula, Poa, Rhynchospora, Scirpus
+         #Species = gsub("boliv", "boliviensis", Species),
+         #Species = gsub("PIC|PIN|pichenchesis|pin.|PINC|sppic|sppin", "pinchinensis", Species),
+         ) %>% 
+  
+  # Taxon
   mutate(Taxon = paste(Genus, Species, sep = " ")) %>% 
 # Sort (!!!ADD DRY_MASS_TOTAL_G IF THAT EXISTS!!!!)
   select(ID, Country, Year, Project, Treatment, Site, Elevation, Latitude, Longitude, Gradient, PlotID, Taxon, Genus, Species, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Bulk, NrLeaves, NumberLeavesScan, AreaFlag, DryFlag, WetFlag, Comment)
+
+traits.fixed.genus %>% distinct(Taxon) %>% arrange(Taxon) %>% pn
 
 save(traits.fixed.genus, file = "traits.fixed.genus.Rdata")
 
