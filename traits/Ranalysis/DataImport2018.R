@@ -26,7 +26,7 @@ coordinates_2018 <- coordinates %>%
 # for export leaves
 coords <- coordinates_2018 %>% 
   group_by(Site) %>% 
-  summarise(Lat = mean(Latitude), Long = mean(Longitude), Elev = mean(Elevation))
+  summarise(Lat = mean(Latitude), Long = mean(Longitude))
   
 
 
@@ -50,7 +50,7 @@ species <- species %>%
          
 
 
-#### SPECIES COVER ####
+#### SPECIES COVER OLD ####
 cover <- read_excel("community/data/2018-03-07_Peru.cover.data.xlsx", sheet = "Cover", col_types = c("text", "text", "text", "numeric", "text", "numeric", "text", "text", "text", "text"))
 
 cover <- cover %>% 
@@ -68,7 +68,7 @@ cover <- cover %>%
 setdiff(cover$species, species$species)
 setdiff(species$species, cover$species)
 
-
+### GRAMINOIDS COVER
 load(file = "community/gramm.comm.cover.Rdata", verbose = TRUE)
 graminoids <- gram.comm[,-5] %>% as.tibble() %>% mutate(cover = as.numeric(gsub("\\+", "0.5", cover)))
 
@@ -78,18 +78,27 @@ graminoids <- graminoids %>%
   summarise(cover = sum(cover)) %>% 
   mutate(family = ifelse(genus %in% c("Agrostis", "Bromus", "Calamagrostis", "Paspallum", "Cortaderia", "Poa", "Poaceae", "Phippsia", "Neurolepis"), "Poaceae", NA)) %>% 
   mutate(family = ifelse(genus %in% c("Carex", "Rhynchospora", "Scirpus"), "Cyperaceae", family)) %>% 
-  mutate(family = ifelse(genus %in% c("Luzula", "Juncus"), "Juncaceae", family))
+  mutate(family = ifelse(genus %in% c("Luzula", "Juncus"), "Juncaceae", family),
+         functionalGroup = "graminoid")
 
-
+# FORB COVER
 forbs <- read_excel(path = "community/data/2018-03-17_Peru.cover.data_UpdatedForbs.xlsx", sheet = "Cover")
 forbs <- forbs %>% mutate(cover = as.numeric(gsub("\\+", "0.5", cover))) %>% 
-  select(site, plot, treatment, Family, Genus, cover) %>% 
-  group_by(site, plot, treatment, Family, Genus) %>% 
+  select(site, plot, treatment, Family, Genus, species, cover) %>% 
+  group_by(site, plot, treatment, Family, Genus, species) %>% 
   summarise(cover = sum(cover)) %>% 
-  rename(genus = Genus, family = Family)
+  rename(genus = Genus, family = Family) %>% 
+  mutate(functionalGroup = "forb")
 
 all.cover <- graminoids %>% 
   rbind(forbs)
+
+
+SPlist <- all.cover %>% 
+  ungroup() %>% 
+  select(family, genus, functionalGroup) %>% 
+  distinct(family, genus, functionalGroup)
+
 
 ### Correct misspellings ####
 # according to TNRS: Pseudognaphalium ramosissimum <- Gnaphalium ramosissimum
@@ -429,7 +438,7 @@ traits.fixed.genus <- traits %>%
          Genus = gsub("Gamachaeta|Gauochata", "Gamochaeta", Genus),
          Genus = gsub("Geufiaua|Geutiana", "Gentiana", Genus),
          Genus = gsub("Hypocheris|Hypoehaens", "Hypochaeris", Genus),
-         Genus = gsub("Hypsophila", "Hysophila", Genus),
+         Genus = gsub("Hypsophila", "Hypsela", Genus),
          Genus = gsub("Lysopomia|Lysipania", "Lysipomia", Genus),
          Genus = gsub("Myconia|Mycomia", "Miconia", Genus),
          Genus = gsub("Nertera |Netera", "Nertera", Genus),
@@ -452,7 +461,7 @@ traits.fixed.genus <- traits %>%
   mutate(Genus = ifelse(Genus == "Melpome", "Melpomene", Genus),
          Genus = ifelse(Genus == "Melpone", "Melpomene", Genus)) %>% 
   
-  mutate(Genus = ifelse((Genus == "Pernettya" & Species == "pungens"), "pungens", Genus)) %>% 
+  mutate(Genus = ifelse((Genus == "Pernettya" & Species == "pungens"), "Perezia", Genus)) %>% 
 
   
   # Fix Species names
@@ -544,7 +553,7 @@ traits.fixed.genus <- traits %>%
          Species = ifelse((Genus == "Rhynchospora" & Species == "m"), "macrochaeta", Species),
          Species = ifelse((Genus == "Rhynchospora" & Species == "M"), "macrochaeta", Species),
          Species = ifelse((Genus == "Rhynchospora" & Species == "macr"), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "macr."), "macrochaeta", Species),
+         Species = ifelse((Genus == "Rhynchospora" & Species == "marc."), "macrochaeta", Species),
          Species = ifelse((Genus == "Rhynchospora" & Species == "macro"), "macrochaeta", Species),
          Species = ifelse((Genus == "Rhynchospora" & Species == "macrochalta"), "macrochaeta", Species),
          Species = ifelse((Genus == "Rhynchospora" & Species == "spm"), "macrochaeta", Species),
@@ -571,6 +580,7 @@ save(traits.fixed.genus, file = "traits.fixed.genus.Rdata")
 #"BMB7274" empty scan
 # CHECK: Vaccinium cylindistachya = Vaccinium florib. or Acaena cylind.
 ### some 17.3.2018 QEL are actually WAY
+### Check at Wayqecha: Alchemilla sp. Could be Alchemilla pinnata
 
 traits.fixed.genus %>% filter(is.na(PlotID), Project != "Sean") %>% select(ID, Site, PlotID, Individual_nr, Taxon, Genus)
 
@@ -586,16 +596,3 @@ sp <- traits %>%
 library("taxize")
 names <- gnr_resolve(names = sp$Genus, db = "tnrs")
 tnrs(sp$Genus)
-
-### Fix species names
-traits %>% 
-  mutate(Taxon = paste(Genus, Species, sep = " ")) %>% filter(Taxon == "Paspalum Sean")
-  mutate(Taxon = gsub("Elaphoglossum sp. ", "Elaphoglossum sp.", Taxon)) %>% 
-  mutate(Taxon = gsub("Carex P", "Carex pinchinensis", Taxon)) %>% 
-  mutate(Taxon = gsub("Bromus sp. Blue", "Bromus blue", Taxon)) %>% 
-  mutate(Taxon = gsub("Eriosorus chelianthoides", "Eriosorus cheilanthoides", Taxon)) %>% 
-  mutate(Taxon = gsub("Eriosorus sp", "Eriosorus sp.", Taxon)) %>% 
-  mutate(Taxon = gsub("Nertera  granadensis", "Nertera granadensis", Taxon)) %>% 
-  mutate(Taxon = gsub("Orchio sp.", "Orchid sp.", Taxon)) %>% 
-  mutate(Taxon = gsub("Pernettya sp", "Pernettya sp.", Taxon)) %>% 
-  mutate(Taxon = gsub("Werneria nugibena", "Werneria nubigena", Taxon))
