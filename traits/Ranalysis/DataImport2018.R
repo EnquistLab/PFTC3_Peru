@@ -47,7 +47,12 @@ species <- species %>%
   # remove duplicates
   distinct(Species, Family, FunctionalGroup) %>% 
   rename(species = Species, family = Family,  functionalGroup = FunctionalGroup)
-         
+        
+
+### GRAMINOIDS SP CORRECTIONS
+GraminoidsUpdate <- read_excel(path = "community/data/Peru_2018_unique_gramminoids_names.xlsx", col_names = TRUE)
+GraminoidsUpdate <- GraminoidsUpdate %>% 
+  select(Genus, Species, Comment, merge_genus, merge_species_lib)
 
 
 #### SPECIES COVER OLD ####
@@ -423,14 +428,22 @@ traits <- traits.raw %>%
          WetFlag = ifelse(ID == "CVV7522", "TooSmallWeight", ""),
          WetFlag = ifelse(ID == "DKQ1911", "TooSmallWeight", ""))   # Lycopodiella, more than2 branches scanned
 
+### FIX GRAMINOID NAMES ###
+traits %>% 
+  anti_join(GraminoidsUpdate, by = c("Genus", "Species", "Comment")) %>% distinct(Genus) %>% pn
 
+traits %>% 
+  anti_join(GraminoidsUpdate, by = c("Genus", "Species", "Comment")) %>% 
+  filter(Genus %in% c("Phippsia")) %>% select(Genus, Species, Comment) %>% pn
+  
+  
 
 traits.fixed.genus <- traits %>% 
   # Fix Genus names
   mutate(Genus = gsub("Achemilla|Alchemilla ", "Alchemilla", Genus),
          Genus = gsub("Belonathus|Belonauthus", "Belonanthus", Genus),
          Genus = gsub("Calamagostus", "Calamagrostis", Genus),
-         Genus = gsub("Cordateria", "Cortaderia", Genus),
+         #Genus = gsub("Cordateria", "Cortaderia", Genus),
          Genus = gsub("Elaphoglossum ", "Elaphoglossum", Genus),
          Genus = gsub("Gaulteria", "Gaultheria", Genus),
          Genus = gsub("Gauphaliaum", "Gnaphalium", Genus),
@@ -442,18 +455,17 @@ traits.fixed.genus <- traits %>%
          Genus = gsub("Lysopomia|Lysipania", "Lysipomia", Genus),
          Genus = gsub("Myconia|Mycomia", "Miconia", Genus),
          Genus = gsub("Nertera |Netera", "Nertera", Genus),
-         Genus = gsub("new", "New", Genus),
-         Genus = gsub("Neurol", "Neurolepis", Genus),
+         #Genus = gsub("new", "New", Genus),
+         #Genus = gsub("Neurol", "Neurolepis", Genus),
          Genus = gsub("Niphogetum", "Niphogeton", Genus),
          Genus = gsub("Orchio|Orquidede|Orchid", "Orchidaceae", Genus),
          Genus = gsub("Oritrophilum|Oritrophium|Orithrophium", "Oritrophium", Genus),
          Genus = gsub("Oerithales", "Oreithales", Genus),
-         Genus = gsub("Paspalum", "Paspallum", Genus),
          Genus = gsub("Perzia", "Perezia", Genus),
          Genus = gsub("Prenettya", "Pernettya", Genus),
          Genus = gsub("Pterichius|Pterichris", "Pterichis", Genus),
-         Genus = gsub("Rhynchosphora|Rhyncosphora|Rhyncospora|Rynchosphora", "Rhynchospora", Genus),
-         Genus = gsub("Scripus", "Scirpus", Genus),
+         #Genus = gsub("Rhynchosphora|Rhyncosphora|Rhyncospora|Rynchosphora", "Rhynchospora", Genus),
+         #Genus = gsub("Scripus", "Scirpus", Genus),
          Genus = gsub("Senecia", "Senecio", Genus),
          Genus = gsub("Werneria ", "Werneria", Genus)
          ) %>% 
@@ -468,7 +480,7 @@ traits.fixed.genus <- traits %>%
   mutate(Species = ifelse(is.na(Species), "sp", Species)) %>% 
   
   mutate(Species = gsub("sp.", "sp", Species),
-         Species = gsub("green|spgreen", "spGreen", Species),
+         #Species = gsub("green|spgreen", "spGreen", Species),
          
          Species = gsub("erodifolia", "erodiifolia", Species),
          Species = gsub("genisteloides", "genistelloides", Species),
@@ -480,8 +492,8 @@ traits.fixed.genus <- traits %>%
          Species = gsub("sessilifolium", "sessiliflorum", Species),
          Species = gsub("audinus", "andinum", Species),
          Species = gsub("raraxacoides|taraxaciodes|taroxacoides", "taraxacoides", Species),
-         Species = gsub("w/bract", "sp", Species),
-         Species = gsub("raccimosa|racemose", "racemosa", Species),
+         #Species = gsub("w/bract", "sp", Species),
+         #Species = gsub("raccimosa|racemose", "racemosa", Species),
          Species = gsub("integrafolia", "integrifolia", Species),
          Species = gsub("hieraciodes", "hieracioides", Species),
          Species = gsub("macrophazea", "macrocephala", Species),
@@ -503,65 +515,65 @@ traits.fixed.genus <- traits %>%
          Species = ifelse((Genus == "Unknown" & Species == "hairy leaves"), "hairy leaf", Species),
          
          # GRASSES: Agrostis, Calamagrostis, Carex, Luzula, Poa, Rhynchospora (R. m = Rhyncospora macrochaeta), Scirpus
-         Species = ifelse((Genus == "Agrostis" & Species == 1), "sp1", Species),
-         Species = ifelse((Genus == "Agrostis" & Species == 2), "sp2", Species),
-         Species = ifelse((Genus == "Agrostis" & Species == 4), "sp4", Species),
-         Species = ifelse((Genus == "Agrostis" & Species == "norwegian"), "spNorwegian", Species),
-         Species = ifelse((Genus == "Agrostis" & Species == "spnorwegian"), "spNorwegian", Species),
-         Species = ifelse((Genus == "Agrostis" & Species == "spnorweigan"), "spNorwegian", Species),
+         #Species = ifelse((Genus == "Agrostis" & Species == 1), "sp1", Species),
+         #Species = ifelse((Genus == "Agrostis" & Species == 2), "sp2", Species),
+         #Species = ifelse((Genus == "Agrostis" & Species == 4), "sp4", Species),
+         #Species = ifelse((Genus == "Agrostis" & Species == "norwegian"), "spNorwegian", Species),
+         #Species = ifelse((Genus == "Agrostis" & Species == "spnorwegian"), "spNorwegian", Species),
+         #Species = ifelse((Genus == "Agrostis" & Species == "spnorweigan"), "spNorwegian", Species),
 
          
-         Species = ifelse((Genus == "Bromus" & Species == "1 blue"), "spBlue", Species),
-         Species = ifelse((Genus == "Bromus" & Species == "blue"), "spBlue", Species),
-         Species = ifelse((Genus == "Bromus" & Species == "sp (blue)"), "spBlue", Species),
-         Species = ifelse((Genus == "Bromus" & Species == "sp Blue"), "spBlue", Species),
-         Species = ifelse((Genus == "Bromus" & Species == "spblue"), "spBlue", Species),
+         #Species = ifelse((Genus == "Bromus" & Species == "1 blue"), "spBlue", Species),
+         #Species = ifelse((Genus == "Bromus" & Species == "blue"), "spBlue", Species),
+         #Species = ifelse((Genus == "Bromus" & Species == "sp (blue)"), "spBlue", Species),
+         #Species = ifelse((Genus == "Bromus" & Species == "sp Blue"), "spBlue", Species),
+         #Species = ifelse((Genus == "Bromus" & Species == "spblue"), "spBlue", Species),
          
-         Species = ifelse((Genus == "Calamagrostis" & Species == "q"), "Q", Species),
-         Species = ifelse((Genus == "Calamagrostis" & Species == "spq"), "Q", Species),
-         Species = ifelse((Genus == "Calamagrostis" & Species == "2"), "sp2", Species),
-         Species = ifelse((Genus == "Calamagrostis" & Species == "3"), "sp3", Species),
+         #Species = ifelse((Genus == "Calamagrostis" & Species == "q"), "Q", Species),
+         #Species = ifelse((Genus == "Calamagrostis" & Species == "spq"), "Q", Species),
+         #Species = ifelse((Genus == "Calamagrostis" & Species == "2"), "sp2", Species),
+         #Species = ifelse((Genus == "Calamagrostis" & Species == "3"), "sp3", Species),
          
-         Species = ifelse((Genus == "Carex" & Species == "B"), "boliviensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "boliv"), "boliviensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "m"), "M", Species),
-         Species = ifelse((Genus == "Carex" & Species == "p"), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "P"), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "PIC"), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "pichenchesis"), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "PIN"), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "pin."), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "PINC"), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "pinchinensis"), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "sppic"), "pichinchensis", Species),
-         Species = ifelse((Genus == "Carex" & Species == "sppin"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "B"), "boliviensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "boliv"), "boliviensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "m"), "M", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "p"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "P"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "PIC"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "pichenchesis"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "PIN"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "pin."), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "PINC"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "pinchinensis"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "sppic"), "pichinchensis", Species),
+         #Species = ifelse((Genus == "Carex" & Species == "sppin"), "pichinchensis", Species),
          
-         Species = ifelse((Genus == "Luzula" & Species == "broad"), "spbroad", Species),
+         #Species = ifelse((Genus == "Luzula" & Species == "broad"), "spbroad", Species),
          #Species = ifelse((Genus == "Luzula" & Species == "wide"), "spbroad", Species),
-         Species = ifelse((Genus == "Luzula" & Species == "narrow"), "spnarrow", Species),
-         Species = ifelse((Genus == "Luzula" & Species == "spnarrrow1"), "spnarrow1", Species),
+         #Species = ifelse((Genus == "Luzula" & Species == "narrow"), "spnarrow", Species),
+         #Species = ifelse((Genus == "Luzula" & Species == "spnarrrow1"), "spnarrow1", Species),
          
-         Species = ifelse((Genus == "Paspalum" & Species == "Sean"), "bonplandianum", Species),
-         Species = ifelse((Genus == "Paspalum" & Species == "sp"), "bonplandianum", Species),
+         #Species = ifelse((Genus == "Paspalum" & Species == "Sean"), "bonplandianum", Species),
+         #Species = ifelse((Genus == "Paspalum" & Species == "sp"), "bonplandianum", Species),
          
-         Species = ifelse((Genus == "Poa" & Species == "spunknown"), "sp", Species),
+         #Species = ifelse((Genus == "Poa" & Species == "spunknown"), "sp", Species),
          #Species = ifelse((Genus == "Poa" & Species == "sppratensis"), "pratensis", Species)
          
-         Species = ifelse((Genus == "Rhynchospora" & Species == "art."), "art", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "so large"), "splarge", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "large"), "splarge", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "m"), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "M"), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "macr"), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "marc."), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "macro"), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "macrochalta"), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "spm"), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "spmacr"), "macrochaeta", Species),
-         Species = ifelse((Genus == "Rhynchospora" & Species == "SP."), "sp", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "art."), "art", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "so large"), "splarge", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "large"), "splarge", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "m"), "macrochaeta", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "M"), "macrochaeta", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "macr"), "macrochaeta", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "marc."), "macrochaeta", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "macro"), "macrochaeta", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "macrochalta"), "macrochaeta", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "spm"), "macrochaeta", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "spmacr"), "macrochaeta", Species),
+         #Species = ifelse((Genus == "Rhynchospora" & Species == "SP."), "sp", Species),
          
-         Species = ifelse((Genus == "Scirpus" & Species == "small"), "spsmall", Species),
-         Species = ifelse((Genus == "Scirpus" & Species == "sp (small)"), "spsmall", Species)
+         #Species = ifelse((Genus == "Scirpus" & Species == "small"), "spsmall", Species),
+         #Species = ifelse((Genus == "Scirpus" & Species == "sp (small)"), "spsmall", Species)
          ) %>% 
 
   # Taxon
