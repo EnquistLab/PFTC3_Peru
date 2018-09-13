@@ -30,30 +30,13 @@ coords <- coordinates_2018 %>%
   
 
 
-#### SPECIES LIST ####
-
-# Read in species list and check names
-species <- read_excel("community/data/2018-03-08-Species_List_2018.xlsx")
-
-# Check names with species list, tpl
-sp.check <- tpl.get(species$Species)
-
-sp.check %>% 
-  select(name, note, original.search) %>% 
-  filter(note %in% c("was misspelled"))
-
-species <- species %>% 
-  mutate(Species = gsub(" ", "_", Species)) %>% 
-  # remove duplicates
-  distinct(Species, Family, FunctionalGroup) %>% 
-  rename(species = Species, family = Family,  functionalGroup = FunctionalGroup)
-        
-
 ### GRAMINOIDS SP CORRECTIONS
 GraminoidsUpdate <- read_excel(path = "community/data/Peru_2018_unique_gramminoids_names.xlsx", col_names = TRUE)
 GraminoidsUpdate <- GraminoidsUpdate %>% 
-  select(Genus, Species, Comment, merge_genus, merge_species_lib)
-
+  select(Genus, Species, Comment, merge_genus, merge_species_lib) %>%
+  mutate(Species = replace(Species, Species == "NA", NA),
+         Comment = replace(Comment, Comment == "NA", NA))
+  
 
 #### SPECIES COVER OLD ####
 cover <- read_excel("community/data/2018-03-07_Peru.cover.data.xlsx", sheet = "Cover", col_types = c("text", "text", "text", "numeric", "text", "numeric", "text", "text", "text", "text"))
@@ -428,16 +411,13 @@ traits <- traits.raw %>%
          WetFlag = ifelse(ID == "CVV7522", "TooSmallWeight", ""),
          WetFlag = ifelse(ID == "DKQ1911", "TooSmallWeight", ""))   # Lycopodiella, more than2 branches scanned
 
-### FIX GRAMINOID NAMES ###
-traits %>% 
-  anti_join(GraminoidsUpdate, by = c("Genus", "Species", "Comment")) %>% distinct(Genus) %>% pn
 
-traits %>% 
-  anti_join(GraminoidsUpdate, by = c("Genus", "Species", "Comment")) %>% 
-  filter(Genus %in% c("Phippsia")) %>% select(Genus, Species, Comment) %>% pn
-  
+#### FIX GRAMINOID NAMES ####
+traits <- traits %>% 
+  left_join(GraminoidsUpdate, by = c("Genus", "Species", "Comment"))
   
 
+#### FIX FORB NAMES ####
 traits.fixed.genus <- traits %>% 
   # Fix Genus names
   mutate(Genus = gsub("Achemilla|Alchemilla ", "Alchemilla", Genus),
