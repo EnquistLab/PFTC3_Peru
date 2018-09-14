@@ -1,5 +1,6 @@
 # LOAD LIBRARIES
 library("readxl")
+library("writexl")
 library("tidyverse")
 library("lubridate")
 library("tpl")
@@ -30,7 +31,7 @@ coords <- coordinates_2018 %>%
   
 
 
-### GRAMINOIDS SP CORRECTIONS
+### GRAMINOIDS SP CORRECTIONS FOR TRAITS
 GraminoidsUpdate <- read_excel(path = "community/data/Peru_2018_unique_gramminoids_names.xlsx", col_names = TRUE)
 GraminoidsUpdate <- GraminoidsUpdate %>% 
   select(Genus, Species, Comment, merge_genus, merge_species_lib) %>%
@@ -39,46 +40,60 @@ GraminoidsUpdate <- GraminoidsUpdate %>%
   
 
 #### SPECIES COVER OLD ####
-cover <- read_excel("community/data/2018-03-07_Peru.cover.data.xlsx", sheet = "Cover", col_types = c("text", "text", "text", "numeric", "text", "numeric", "text", "text", "text", "text"))
+#cover <- read_excel("community/data/2018-03-07_Peru.cover.data.xlsx", sheet = "Cover", col_types = c("text", "text", "text", "numeric", "text", "numeric", "text", "text", "text", "text"))
 
-cover <- cover %>% 
-  rename(successionalStage = treatment) %>% 
-  mutate(site = plyr::mapvalues(site, c("WAY", "ACJ", "PIL", "TRE", "QUE"), c("WAY_3100m", "ACJ_3400m", "PIL_3600m", "TRE_3700m", "QUE_3900m"))) %>% 
-  mutate(site = factor(site, level = c("WAY_3100m", "ACJ_3400m", "PIL_3600m", "TRE_3700m", "QUE_3900m"))) %>% 
-  mutate(successionalStage = plyr::mapvalues(successionalStage, c("C", "B", "BB"), c("Late", "Early", "Recent"))) %>%
-  mutate(successionalStage = factor(successionalStage, level = c("Late", "Early", "Recent"))) %>% 
-  mutate(species = gsub("Baccharis_triconeata", "Baccharis_tricuneata", species),
-         species = gsub("Cerastium_arvensiforme", "Cerastium_arvense", species)) %>% 
+#cover <- cover %>% 
+  #rename(successionalStage = treatment) %>% 
+#mutate(site = plyr::mapvalues(site, c("WAY", "ACJ", "PIL", "TRE", "QUE"), c("WAY_3100m", "ACJ_3400m", "PIL_3600m", "TRE_3700m", "QUE_3900m"))) %>% 
+#mutate(site = factor(site, level = c("WAY_3100m", "ACJ_3400m", "PIL_3600m", "TRE_3700m", "QUE_3900m"))) %>% 
+#mutate(successionalStage = plyr::mapvalues(successionalStage, c("C", "B", "BB"), c("Late", "Early", "Recent"))) %>%
+#mutate(successionalStage = factor(successionalStage, level = c("Late", "Early", "Recent"))) %>% 
+#mutate(species = gsub("Baccharis_triconeata", "Baccharis_tricuneata", species),
+#species = gsub("Cerastium_arvensiforme", "Cerastium_arvense", species)) %>% 
   #anti_join(species, by = "species") %>% distinct(species) # check with species do not match between species list and cover
-  left_join(species, by = "species")
-  
+  #left_join(species, by = "species")
 
-setdiff(cover$species, species$species)
-setdiff(species$species, cover$species)
 
 ### GRAMINOIDS COVER
 load(file = "community/gramm.comm.cover.Rdata", verbose = TRUE)
 graminoids <- gram.comm[,-5] %>% as.tibble() %>% mutate(cover = as.numeric(gsub("\\+", "0.5", cover)))
 
+GraminoidsCoverNameUpdate <- read_excel(path = "community/data/GramminoidUpdatedNames_18-09-14.xlsx", col_names = TRUE)
+
+
+# Check these species
+# # Remove doubles: genus, species, cover, etc all the same
+graminoids %>% 
+  group_by(site, plot, treatment, year, genus, species) %>% 
+  mutate(n = n()) %>% filter(n > 1) %>% arrange(site, treatment, plot, genus) %>% as.data.frame()
+  
 graminoids <- graminoids %>% 
-  select(site, plot, treatment, genus, cover) %>% 
-  group_by(site, plot, treatment, genus) %>% 
-  summarise(cover = sum(cover)) %>% 
-  mutate(family = ifelse(genus %in% c("Agrostis", "Bromus", "Calamagrostis", "Paspallum", "Cortaderia", "Poa", "Poaceae", "Phippsia", "Neurolepis"), "Poaceae", NA)) %>% 
-  mutate(family = ifelse(genus %in% c("Carex", "Rhynchospora", "Scirpus"), "Cyperaceae", family)) %>% 
-  mutate(family = ifelse(genus %in% c("Luzula", "Juncus"), "Juncaceae", family),
-         functionalGroup = "graminoid")
+  left_join(GraminoidsCoverNameUpdate) %>%
+  mutate(genus = new_genus,
+         species = new_speceis) %>% 
+  select(-new_genus, -new_speceis, -identity.known, -correct.name, -notes, -notes2, -fuck, -newSpecies) %>% 
+  rename(Year = year, Site = site, PlotID = plot, Treatment = treatment, Genus = genus, Species = species, Cover = cover) %>% 
+  mutate(Family = ifelse(Genus %in% c("Agrostis", "Bromus", "Calamagrostis", "Paspallum", "Cortaderia", "Paspalum", "Poa", "Poaceae", "Phippsia", "Neurolepsis"), "Poaceae", NA),
+         Family = ifelse(Genus %in% c("Carex", "Rhynchospora", "Scirpus"), "Cyperaceae", Family),
+         Family = ifelse(Genus %in% c("Luzula", "Juncus"), "Juncaceae", Family),
+         functionalGroup = "graminoid") 
+
 
 # FORB COVER
 forbs <- read_excel(path = "community/data/2018-03-17_Peru.cover.data_UpdatedForbs.xlsx", sheet = "Cover")
-forbs <- forbs %>% mutate(cover = as.numeric(gsub("\\+", "0.5", cover))) %>% 
-  select(site, plot, treatment, Family, Genus, species, cover) %>% 
-  group_by(site, plot, treatment, Family, Genus, species) %>% 
-  summarise(cover = sum(cover)) %>% 
-  rename(genus = Genus, family = Family) %>% 
-  mutate(functionalGroup = "forb")
+forbs <- forbs %>% 
+  mutate(cover = as.numeric(gsub("\\+", "0.5", cover))) %>% 
+  select(year, site, plot, treatment, Family, Genus, species, cover) %>% 
+  rename(Site = site, PlotID = plot, Treatment = treatment, Year = year, Taxon = species, Cover = cover) %>% 
+  mutate(functionalGroup = "forb") %>% 
+  mutate(Taxon = gsub(pattern = "_", " ", Taxon)) %>%
+  # Found these values on data sheets
+  mutate(Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 1, 9, Cover),
+         Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 4, 5, Cover),
+         # assume cover is low for the remaining sp with NA
+         Cover = ifelse(is.na(Cover), 0.5, Cover))
 
-all.cover <- graminoids %>% 
+CommunityCover_2018_Peru <- graminoids %>% 
   rbind(forbs)
 
 
@@ -414,16 +429,17 @@ traits <- traits.raw %>%
 
 #### FIX GRAMINOID NAMES ####
 traits <- traits %>% 
-  left_join(GraminoidsUpdate, by = c("Genus", "Species", "Comment"))
-  
+  left_join(GraminoidsUpdate, by = c("Genus", "Species", "Comment")) %>% 
+  mutate(Genus = ifelse(!is.na(merge_genus), merge_genus, Genus),
+         Species = ifelse(!is.na(merge_species_lib), merge_species_lib, Species))
+
 
 #### FIX FORB NAMES ####
-traits.fixed.genus <- traits %>% 
+traits_cleaned <- traits %>% 
   # Fix Genus names
   mutate(Genus = gsub("Achemilla|Alchemilla ", "Alchemilla", Genus),
          Genus = gsub("Belonathus|Belonauthus", "Belonanthus", Genus),
          Genus = gsub("Calamagostus", "Calamagrostis", Genus),
-         #Genus = gsub("Cordateria", "Cortaderia", Genus),
          Genus = gsub("Elaphoglossum ", "Elaphoglossum", Genus),
          Genus = gsub("Gaulteria", "Gaultheria", Genus),
          Genus = gsub("Gauphaliaum", "Gnaphalium", Genus),
@@ -435,8 +451,6 @@ traits.fixed.genus <- traits %>%
          Genus = gsub("Lysopomia|Lysipania", "Lysipomia", Genus),
          Genus = gsub("Myconia|Mycomia", "Miconia", Genus),
          Genus = gsub("Nertera |Netera", "Nertera", Genus),
-         #Genus = gsub("new", "New", Genus),
-         #Genus = gsub("Neurol", "Neurolepis", Genus),
          Genus = gsub("Niphogetum", "Niphogeton", Genus),
          Genus = gsub("Orchio|Orquidede|Orchid", "Orchidaceae", Genus),
          Genus = gsub("Oritrophilum|Oritrophium|Orithrophium", "Oritrophium", Genus),
@@ -444,8 +458,6 @@ traits.fixed.genus <- traits %>%
          Genus = gsub("Perzia", "Perezia", Genus),
          Genus = gsub("Prenettya", "Pernettya", Genus),
          Genus = gsub("Pterichius|Pterichris", "Pterichis", Genus),
-         #Genus = gsub("Rhynchosphora|Rhyncosphora|Rhyncospora|Rynchosphora", "Rhynchospora", Genus),
-         #Genus = gsub("Scripus", "Scirpus", Genus),
          Genus = gsub("Senecia", "Senecio", Genus),
          Genus = gsub("Werneria ", "Werneria", Genus)
          ) %>% 
@@ -460,8 +472,6 @@ traits.fixed.genus <- traits %>%
   mutate(Species = ifelse(is.na(Species), "sp", Species)) %>% 
   
   mutate(Species = gsub("sp.", "sp", Species),
-         #Species = gsub("green|spgreen", "spGreen", Species),
-         
          Species = gsub("erodifolia", "erodiifolia", Species),
          Species = gsub("genisteloides", "genistelloides", Species),
          Species = gsub("caesptosa", "caespitosa", Species),
@@ -472,8 +482,6 @@ traits.fixed.genus <- traits %>%
          Species = gsub("sessilifolium", "sessiliflorum", Species),
          Species = gsub("audinus", "andinum", Species),
          Species = gsub("raraxacoides|taraxaciodes|taroxacoides", "taraxacoides", Species),
-         #Species = gsub("w/bract", "sp", Species),
-         #Species = gsub("raccimosa|racemose", "racemosa", Species),
          Species = gsub("integrafolia", "integrifolia", Species),
          Species = gsub("hieraciodes", "hieracioides", Species),
          Species = gsub("macrophazea", "macrocephala", Species),
@@ -481,8 +489,6 @@ traits.fixed.genus <- traits %>%
          Species = gsub("aquilineum", "aquilinum", Species),
          Species = gsub("cuscoensis", "cuzcoensis", Species),
          Species = gsub("nugibena", "nubigena", Species),
-         
-         
          Species = ifelse((Genus == "Asteraceae" & Species == "hairy leaf"), "sphairyleaf", Species),
          Species = ifelse((Genus == "Chaptalia" & Species == "sp"), "cordata", Species),
          Species = ifelse((Genus == "Elaphoglossum" & Species == "narrow"), "spnarrow", Species),
@@ -492,87 +498,23 @@ traits.fixed.genus <- traits %>%
          Species = ifelse((Genus == "Pterichis" & Species == "sp"), "silvestris", Species),
          Species = ifelse((Genus == "Senecio" & Species == "sp 2"), "sp2", Species),
          Species = ifelse((Genus == "Viola" & Species == "pygmae|pygmaeaa"), "pygmaea", Species),
-         Species = ifelse((Genus == "Unknown" & Species == "hairy leaves"), "hairy leaf", Species),
-         
-         # GRASSES: Agrostis, Calamagrostis, Carex, Luzula, Poa, Rhynchospora (R. m = Rhyncospora macrochaeta), Scirpus
-         #Species = ifelse((Genus == "Agrostis" & Species == 1), "sp1", Species),
-         #Species = ifelse((Genus == "Agrostis" & Species == 2), "sp2", Species),
-         #Species = ifelse((Genus == "Agrostis" & Species == 4), "sp4", Species),
-         #Species = ifelse((Genus == "Agrostis" & Species == "norwegian"), "spNorwegian", Species),
-         #Species = ifelse((Genus == "Agrostis" & Species == "spnorwegian"), "spNorwegian", Species),
-         #Species = ifelse((Genus == "Agrostis" & Species == "spnorweigan"), "spNorwegian", Species),
-
-         
-         #Species = ifelse((Genus == "Bromus" & Species == "1 blue"), "spBlue", Species),
-         #Species = ifelse((Genus == "Bromus" & Species == "blue"), "spBlue", Species),
-         #Species = ifelse((Genus == "Bromus" & Species == "sp (blue)"), "spBlue", Species),
-         #Species = ifelse((Genus == "Bromus" & Species == "sp Blue"), "spBlue", Species),
-         #Species = ifelse((Genus == "Bromus" & Species == "spblue"), "spBlue", Species),
-         
-         #Species = ifelse((Genus == "Calamagrostis" & Species == "q"), "Q", Species),
-         #Species = ifelse((Genus == "Calamagrostis" & Species == "spq"), "Q", Species),
-         #Species = ifelse((Genus == "Calamagrostis" & Species == "2"), "sp2", Species),
-         #Species = ifelse((Genus == "Calamagrostis" & Species == "3"), "sp3", Species),
-         
-         #Species = ifelse((Genus == "Carex" & Species == "B"), "boliviensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "boliv"), "boliviensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "m"), "M", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "p"), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "P"), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "PIC"), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "pichenchesis"), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "PIN"), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "pin."), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "PINC"), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "pinchinensis"), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "sppic"), "pichinchensis", Species),
-         #Species = ifelse((Genus == "Carex" & Species == "sppin"), "pichinchensis", Species),
-         
-         #Species = ifelse((Genus == "Luzula" & Species == "broad"), "spbroad", Species),
-         #Species = ifelse((Genus == "Luzula" & Species == "wide"), "spbroad", Species),
-         #Species = ifelse((Genus == "Luzula" & Species == "narrow"), "spnarrow", Species),
-         #Species = ifelse((Genus == "Luzula" & Species == "spnarrrow1"), "spnarrow1", Species),
-         
-         #Species = ifelse((Genus == "Paspalum" & Species == "Sean"), "bonplandianum", Species),
-         #Species = ifelse((Genus == "Paspalum" & Species == "sp"), "bonplandianum", Species),
-         
-         #Species = ifelse((Genus == "Poa" & Species == "spunknown"), "sp", Species),
-         #Species = ifelse((Genus == "Poa" & Species == "sppratensis"), "pratensis", Species)
-         
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "art."), "art", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "so large"), "splarge", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "large"), "splarge", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "m"), "macrochaeta", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "M"), "macrochaeta", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "macr"), "macrochaeta", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "marc."), "macrochaeta", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "macro"), "macrochaeta", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "macrochalta"), "macrochaeta", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "spm"), "macrochaeta", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "spmacr"), "macrochaeta", Species),
-         #Species = ifelse((Genus == "Rhynchospora" & Species == "SP."), "sp", Species),
-         
-         #Species = ifelse((Genus == "Scirpus" & Species == "small"), "spsmall", Species),
-         #Species = ifelse((Genus == "Scirpus" & Species == "sp (small)"), "spsmall", Species)
-         ) %>% 
+         Species = ifelse((Genus == "Unknown" & Species == "hairy leaves"), "hairy leaf", Species)) %>% 
+  
+  mutate(Species = ifelse(ID == "CHL7402", "sp", Species)) %>% 
 
   # Taxon
   mutate(Taxon = paste(Genus, Species, sep = " ")) %>% 
 # Sort (!!!ADD DRY_MASS_TOTAL_G IF THAT EXISTS!!!!)
   select(ID, Country, Year, Project, Treatment, Site, Elevation, Latitude, Longitude, Gradient, PlotID, Taxon, Genus, Species, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Bulk, NrLeaves, NumberLeavesScan, AreaFlag, DryFlag, WetFlag, Comment)
 
-traits.fixed.genus %>% distinct(Taxon) %>% arrange(Taxon) %>% pn
+traits_cleaned %>% distinct(Taxon) %>% arrange(Taxon) %>% pn
 
-save(traits.fixed.genus, file = "traits.fixed.genus.Rdata")
-
+save(traits_cleaned, file = "traits/data/traits_cleaned.Rdata")
 
 
 # TO DO !!!
-### One leaf withouth ID
-#"BMB7274" empty scan
-# CHECK: Vaccinium cylindistachya = Vaccinium florib. or Acaena cylind.
 ### some 17.3.2018 QEL are actually WAY
-### Check at Wayqecha: Alchemilla sp. Could be Alchemilla pinnata
+
 
 traits.fixed.genus %>% filter(is.na(PlotID), Project != "Sean") %>% select(ID, Site, PlotID, Individual_nr, Taxon, Genus)
 
