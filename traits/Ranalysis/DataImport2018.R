@@ -55,38 +55,62 @@ GraminoidsUpdate <- GraminoidsUpdate %>%
 
 
 ### GRAMINOIDS COVER
-load(file = "community/gramm.comm.cover.Rdata", verbose = TRUE)
-graminoids <- gram.comm[,-5] %>% as.tibble() %>% mutate(cover = as.numeric(gsub("\\+", "0.5", cover)))
-
 GraminoidsCoverNameUpdate <- read_excel(path = "community/data/GramminoidUpdatedNames_18-09-14.xlsx", col_names = TRUE)
 
-
-# Check these species
-# # Remove doubles: genus, species, cover, etc all the same
-graminoids %>% 
-  group_by(site, plot, treatment, year, genus, species) %>% 
-  mutate(n = n()) %>% filter(n > 1) %>% arrange(site, treatment, plot, genus) %>% as.data.frame()
+load(file = "community/gramm.comm.cover.Rdata", verbose = TRUE)
+graminoids <- gram.comm %>% 
+  set_names(make.names(names(.), unique = TRUE)) %>% 
+  as.tibble() %>% 
+  select(-species) %>% 
+  rename(species = species.1) %>% 
+  mutate(cover = as.numeric(gsub("\\+", "0.5", cover))) %>% 
   
-graminoids <- graminoids %>% 
-  left_join(GraminoidsCoverNameUpdate) %>%
+  # Fix species names
+  left_join(GraminoidsCoverNameUpdate, by = c("genus", "species")) %>%
   mutate(genus = new_genus,
          species = new_speceis) %>% 
-  select(-new_genus, -new_speceis, -identity.known, -correct.name, -notes, -notes2, -fuck, -newSpecies) %>% 
+  select(-new_genus, -new_speceis, -correct.name, -notes, -notes2, -fuck, -newSpecies) %>% 
   rename(Year = year, Site = site, PlotID = plot, Treatment = treatment, Genus = genus, Species = species, Cover = cover) %>% 
-  mutate(Family = ifelse(Genus %in% c("Agrostis", "Bromus", "Calamagrostis", "Paspallum", "Cortaderia", "Paspalum", "Poa", "Poaceae", "Phippsia", "Neurolepsis"), "Poaceae", NA),
+
+  # Fix double entries. I assume species was named wrong
+  mutate(Species = ifelse(Site == "ACJ" & PlotID == 3 & Treatment == "C" & Genus == "Calamagrostis" & Cover == 30, "sp2", Species),
+         Species = ifelse(Site == "ACJ" & PlotID == 3 & Treatment == "C" & Genus == "Calamagrostis" & Cover == 8, "sp3", Species),
+         
+         Species = ifelse(Site == "WAY" & PlotID == 4 & Treatment == "B" & Genus == "Carex" & Cover == 0.5, "sp1", Species),
+         Species = ifelse(Site == "WAY" & PlotID == 4 & Treatment == "B" & Genus == "Carex" & Cover == 2.0, "splong", Species),
+         
+         Species = ifelse(Site == "PIL" & PlotID == 1 & Treatment == "BB" & Genus == "Bromus" & Cover == 0.5, "sp", Species),
+         Species = ifelse(Site == "PIL" & PlotID == 1 & Treatment == "BB" & Genus == "Bromus" & Cover == 6.0, "spblue", Species),
+         
+         Species = ifelse(Site == "QUE" & PlotID == 4 & Treatment == "B" & Genus == "Bromus" & Cover == 2.0, "lanatus", Species),
+         Species = ifelse(Site == "QUE" & PlotID == 4 & Treatment == "B" & Genus == "Bromus" & Cover == 0.5, "lanatus_stiff", Species)) %>% 
+  
+  filter(!(Site == "PIL" & PlotID == 1 & Treatment == "BB" & Genus == "Agrostis" & Cover == 0.5)) %>% 
+  filter(!(Site == "PIL" & PlotID == 1 & Treatment == "BB" & Genus == "Calamagrostis" & Cover == 0.5)) %>% 
+  filter(!(Site == "PIL" & PlotID == 1 & Treatment == "BB" & Genus == "Carex" & identity.known == 1)) %>%
+  
+  # add family, functional group and Taxon
+  mutate(Family = ifelse(Genus %in% c("Agrostis", "Bromus", "Calamagrostis", "Cortaderia", "Paspalum", "Poa", "Poaceae", "Phippsia", "Neurolepsis"), "Poaceae", NA),
          Family = ifelse(Genus %in% c("Carex", "Rhynchospora", "Scirpus"), "Cyperaceae", Family),
          Family = ifelse(Genus %in% c("Luzula", "Juncus"), "Juncaceae", Family),
-         functionalGroup = "graminoid") 
+         functionalGroup = "graminoid") %>% 
+  mutate(Taxon = paste(Genus, Species, sep = " ")) %>% 
+  select(Year, Site, PlotID, Treatment, Family, Genus, Species, Taxon, Cover, functionalGroup, identity.known)
+
 
 
 # FORB COVER
 forbs <- read_excel(path = "community/data/2018-03-17_Peru.cover.data_UpdatedForbs.xlsx", sheet = "Cover")
+
 forbs <- forbs %>% 
   mutate(cover = as.numeric(gsub("\\+", "0.5", cover))) %>% 
   select(year, site, plot, treatment, Family, Genus, species, cover) %>% 
+  filter(species != "Paspallum_bonplandianum") %>% 
   rename(Site = site, PlotID = plot, Treatment = treatment, Year = year, Taxon = species, Cover = cover) %>% 
   mutate(functionalGroup = "forb") %>% 
-  mutate(Taxon = gsub(pattern = "_", " ", Taxon)) %>%
+  mutate(Species = sub(".*_", "", Taxon),
+         Genus = ifelse(is.na(Genus), sub("_.*", "", Taxon), Genus),
+         Taxon = gsub(pattern = "_", " ", Taxon)) %>%
   # Found these values on data sheets
   mutate(Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 1, 9, Cover),
          Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 4, 5, Cover),
@@ -95,68 +119,10 @@ forbs <- forbs %>%
 
 CommunityCover_2018_Peru <- graminoids %>% 
   rbind(forbs)
-
-
-SPlist <- all.cover %>% 
-  ungroup() %>% 
-  select(family, genus, functionalGroup) %>% 
-  distinct(family, genus, functionalGroup)
-
-
-### Correct misspellings ####
-# according to TNRS: Pseudognaphalium ramosissimum <- Gnaphalium ramosissimum
-
-cover <- cover %>% 
-  mutate(species = gsub("Acaena_cylindrystachya", "Acaena_cylindristachya", species),
-         species = gsub("Paspallum_bonplandianum", "Paspalum_bonplandianum", species),
-         species = gsub("Rhynchosphora_macrochaeta", "Rhynchospora_macrochaeta", species),
-         species = gsub("Viola_pygmea", "Viola_pygmaea", species),
-         species = gsub("Melpomene_miniliformis", "Melpomene_moniliformis", species))
-
-
-# Calculate highest cover
-cover.max <- cover %>% 
-  group_by(site, species, successionalStage) %>% 
-  summarise(n = n(), mean = mean(cover, na.rm = TRUE), se = sd(cover, na.rm = TRUE)/sqrt(n)) %>% 
-  arrange(site, successionalStage, -mean, se)
-
-#write_csv(cover.max, path = "community/data/scover.max.csv")
-
-
-# Get distinct species list
-sp.list.2018 <- cover %>% distinct(species) %>% 
-  mutate(species = tolower(species)) %>% 
-  mutate(species = gsub("_", " ", species)) %>% 
-  left_join(species, by = c("species" = "Taxon")) %>% 
-  select(species, Family)
-  
-#write_csv(sp.list.2018, path = "community/sp.list.2018.csv")
+save(CommunityCover_2018_Peru, file = "community/data/CommunityCover_2018_Peru.Rdata")
 
 
 
-cover %>% 
-  filter(functionalGroup != c("Lichen", "Bryophytes")) %>% 
-  group_by(site, successionalStage, plot) %>% 
-  summarise(n = n()) %>% 
-  group_by(site) %>% 
-  summarise(mean = mean(n))
-
-
-cover %>% 
-  filter(functionalGroup != c("Lichen", "Bryophytes")) %>% 
-  group_by(site, successionalStage, plot) %>% 
-  summarise(n = n()) %>% 
-  group_by(site) %>% 
-  summarise(mean = mean(n))
-
-cover %>% filter(is.na(functionalGroup))
-
-
-Species.list.field <- cover %>% 
-  filter(!functionalGroup %in% c("Lichen", "Bryophytes")) %>% 
-  arrange(site, successionalStage, plot, -cover) %>% 
-  select(site, plot, successionalStage, species, cover, notes2)
-write_csv(Species.list.field, path = "community/Species.list.field.csv")
 
 
 #### LEAF AREA ####
@@ -357,7 +323,7 @@ traits <- traits.raw %>%
   
   ### CALCULATE AREA, SLA, etc.
   # Species with leaf number = > Leaf nr = 1 because of calculations below
-  mutate(NrLeaves = ifelse(Genus %in% c("Baccharis", "Huperzia", "Lycopodiella", "Lycopodium"), 1, NrLeaves)) %>%
+  mutate(NrLeaves = ifelse(Genus %in% c("Baccharis", "Lycopodiella", "Lycopodium"), 1, NrLeaves)) %>%
   
   # Fix wrong values
   mutate(Wet_Mass_g = ifelse(ID == "DKQ1911", NA, Wet_Mass_g),
