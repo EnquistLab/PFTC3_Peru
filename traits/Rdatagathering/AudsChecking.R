@@ -100,3 +100,19 @@ traits.raw %>%
 setdiff(all.files$ID, ID.list)
 setdiff(traits.raw$ID, ID.list)
 
+
+# Compare species in trait and community data
+traits_cleaned %>% 
+  select(Site, Treatment, PlotID, Taxon) %>% 
+  anti_join(CommunityCover_2018_Peru, by = c("Site", "Treatment", "PlotID", "Taxon")) %>% 
+  distinct(Site, Treatment, Taxon) %>% 
+  arrange(Site, Treatment, Taxon) %>% pn
+
+CommunityCover_2018_Peru %>% 
+  anti_join(traits_cleaned, by = c("Site", "Treatment", "PlotID", "Taxon")) %>% 
+  filter(functionalGroup == "graminoid") %>% 
+  filter(Cover < 2) %>%
+  #distinct(Site, Treatment, Taxon) %>% 
+  arrange(Site, Treatment, Taxon) %>% pn
+  
+  
