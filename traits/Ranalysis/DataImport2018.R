@@ -401,7 +401,7 @@ traits <- traits %>%
 
 
 #### FIX FORB NAMES ####
-traits_cleaned <- traits %>% 
+traits_2018_Peru_cleaned <- traits %>% 
   # Fix Genus names
   mutate(Genus = gsub("Achemilla|Alchemilla ", "Alchemilla", Genus),
          Genus = gsub("Belonathus|Belonauthus", "Belonanthus", Genus),
@@ -473,9 +473,8 @@ traits_cleaned <- traits %>%
 # Sort (!!!ADD DRY_MASS_TOTAL_G IF THAT EXISTS!!!!)
   select(ID, Country, Year, Project, Treatment, Site, Elevation, Latitude, Longitude, Gradient, PlotID, Taxon, Genus, Species, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Bulk, NrLeaves, NumberLeavesScan, AreaFlag, DryFlag, WetFlag, Comment)
 
-traits_cleaned %>% distinct(Taxon) %>% arrange(Taxon) %>% pn
 
-save(traits_cleaned, file = "traits/data/traits_cleaned.Rdata")
+save(traits_2018_Peru_cleaned, file = "traits/data/traits_2018_Peru_cleaned.Rdata")
 
 
 # TO DO !!!
