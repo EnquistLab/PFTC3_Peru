@@ -9,8 +9,17 @@ Export_Species <- traits.cover %>%
   #summarize(Number_Plants = n(), AllIDs = paste(ID, collapse = ", "), Nr_Leaf = paste(Nr_leaves, collapse = ", ")) %>% 
   mutate(Nr_leaves = ifelse(Nr_leaves == "8 cm", 1, Nr_leaves)) %>% 
   arrange(Site, Elevation, family, Genus)
-  
-writexl::write_xlsx(x = Export_Species, path = "ExportSpeciesList.xlsx")
+
+
+load(file = "traits.fixed.genus.Rdata")
+Export_Species <- traits.fixed.genus %>% 
+  select(Site, Elevation, Genus, Species, Treatment, PlotID, Individual_nr, ID, NrLeaves) %>%
+  left_join(coords, by = "Site") %>% 
+  left_join(SPlist, by = c("Genus" = "genus")) %>% 
+  select(Site, Elevation, Lat, Long, family, Genus, Species, ID, NrLeaves) %>% 
+  arrange(Site, Elevation, family, Genus, Species, ID)
+
+writexl::write_xlsx(x = Export_Species, path = "18-09-11_ExportSpeciesList.xlsx")
 
 
 # Check Cites sp list
@@ -32,5 +41,17 @@ cites %>%
 unique(cites$Family)
 unique(sp$family)
   
+
+
+# For Tucson
+load(file = "traits/data/traits_2018_Peru_cleaned.Rdata")
+Export_SpeciesTUCSON <- traits_2018_Peru_cleaned %>% 
+  select(Site, Elevation, Genus, Species, Treatment, PlotID, Individual_nr, ID, NrLeaves) %>% 
+  #mutate(Nr_leaves = ifelse(is.na(Nr_leaves), 1, Nr_leaves)) %>% 
+  group_by(Genus, Species) %>% 
+  summarize(NumberPlants = n()) %>% 
+  arrange(Genus, Species) %>% print(n = Inf)
+
+writexl::write_xlsx(x = Export_SpeciesTUCSON, path = "18-09-19_ExportSpeciesList_TUCSON.xlsx")
 
 
