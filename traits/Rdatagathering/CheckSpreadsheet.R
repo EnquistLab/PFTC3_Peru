@@ -140,3 +140,13 @@ MakeSomePlots <- function(dat){
   
 }
 
+traits.fixed.genus %>% filter(Leaf_Thickness_1_mm > 0.8, Leaf_Thickness_3_mm < 0.3) %>% as.data.frame()
+
+ggplot(traits.fixed.genus, aes(x = Leaf_Thickness_1_mm, y = Leaf_Thickness_3_mm)) + 
+  geom_point() +   
+  geom_abline(intercept = 0, slope = 1, colour = "red") +
+  geom_vline(xintercept = 0.8, colour = "green") +
+  geom_hline(yintercept = 0.3, colour = "blue") +
+  scale_x_log10() + 
+  scale_y_log10()
+
