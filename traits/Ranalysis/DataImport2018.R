@@ -122,7 +122,28 @@ CommunityCover_2018_Peru <- graminoids %>%
 save(CommunityCover_2018_Peru, file = "community/data/CommunityCover_2018_Peru.Rdata")
 
 
+#### META COMMUNITY DATA ####
+metaCommunity <- read_excel("community/data/2018-03-15_Peru.cover.data.xlsx", sheet = "Meta")
 
+metaCommunity_PE_2018 <- metaCommunity %>% 
+  rename(Site = site, Year = year, PlotID = plot, Treatment = treatment, Month = month, Day = day, Elevation = elevation, Slope_percent = slope, Aspect = aspect) %>% 
+  mutate(Max_height_cm = (max.height.1.cm + max.height.2.cm + max.height.3.cm + max.height.4.cm + max.height.5.cm)/5,
+         Min_Height_cm = (min.height.1.cm + min.height.2.cm + min.height.3.cm + min.height.4.cm + min.height.5.cm)/5,
+         MedianHeight_cm = (median.height.1.cm + median.height.2.cm + median.height.3.cm + median.height.4.cm + median.height.5.cm)/5) %>% 
+  select(-max.height.1.cm, -max.height.2.cm, -max.height.3.cm, -max.height.4.cm, -max.height.5.cm, -min.height.1.cm, -min.height.2.cm, -min.height.3.cm, -min.height.4.cm, -min.height.5.cm, -median.height.1.cm, -median.height.2.cm, -median.height.3.cm, -median.height.4.cm, -median.height.5.cm) %>% 
+  rename(BottomLayer = cover.bottom.layer, Forbs = cover.forbs, Graminoids = cover.graminoids, Shrub = cover.shrub, Ferns = cover.ferns, BareGround = cover.open.soil, Rock = cover.rock, Litter = cover.litter) %>% 
+  mutate(BottomLayer = as.numeric(gsub("\\+", "0.5", BottomLayer)),
+         Forbs = as.numeric(gsub("\\+", "0.5", Forbs)),
+         Graminoids = as.numeric(gsub("\\+", "0.5", Graminoids)),
+         Shrub = as.numeric(gsub("\\+", "0.5", Shrub)),
+         Ferns = as.numeric(gsub("\\+", "0.5", Ferns)),
+         BareGround = as.numeric(gsub("\\+", "0.5", BareGround)),
+         Rock = as.numeric(gsub("\\+", "0.5", Rock)),
+         Litter = as.numeric(gsub("\\+", "0.5", Litter))) %>% 
+  mutate(Vascular = Forbs + Graminoids + Shrub,
+         Country = "PE",
+         Project = "T")
+save(metaCommunity_PE_2018, file = "community/metaCommunity_PE_2018.Rdata")  
 
 
 #### LEAF AREA ####
