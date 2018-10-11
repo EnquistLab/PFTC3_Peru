@@ -32,9 +32,9 @@ coords <- coordinates_2018 %>%
 
 
 ### GRAMINOIDS SP CORRECTIONS FOR TRAITS
-GraminoidsUpdate <- read_excel(path = "community/data/Peru_2018_unique_gramminoids_names.xlsx", col_names = TRUE)
+GraminoidsUpdate <- read_excel(path = "community/data/Peru_2018_unique_gramminoids_names_18-10-11.xlsx", col_names = TRUE)
 GraminoidsUpdate <- GraminoidsUpdate %>% 
-  select(Genus, Species, Comment, merge_genus, merge_species_lib) %>%
+  select(Genus, Species, Comment, merge_genus, merge_species_cons) %>%
   mutate(Species = replace(Species, Species == "NA", NA),
          Comment = replace(Comment, Comment == "NA", NA))
   
@@ -118,7 +118,7 @@ forbs <- forbs %>%
          Cover = ifelse(is.na(Cover), 0.5, Cover))
 
 CommunityCover_2018_Peru <- graminoids %>% 
-  rbind(forbs)
+  bind_rows(forbs)
 save(CommunityCover_2018_Peru, file = "community/data/CommunityCover_2018_Peru.Rdata")
 
 
@@ -192,9 +192,6 @@ LeafArea2018 <- LeafArea.raw %>%
   add_row(ID = "BMB7274", Area_cm2 = NA) %>% 
   add_row(ID = "EHP2066", Area_cm2 = NA) %>% 
   add_row(ID = "FDF1809", Area_cm2 = NA)
-
-# No trait data
-#"AGT5582" "BTB2511" "CPI9081" "CPK9020" "CPQ5646" "CPZ0354" "CQA3676" "CRW2022" "CYQ2950" "CYR3353" "DGT8067" "DGW6179" "DGY8804" "FIR0498" "FIW3669" "BMB7274"
 
 
 
@@ -418,7 +415,7 @@ traits <- traits.raw %>%
 traits <- traits %>% 
   left_join(GraminoidsUpdate, by = c("Genus", "Species", "Comment")) %>% 
   mutate(Genus = ifelse(!is.na(merge_genus), merge_genus, Genus),
-         Species = ifelse(!is.na(merge_species_lib), merge_species_lib, Species))
+         Species = ifelse(!is.na(merge_species_cons), merge_species_cons, Species))
 
 
 #### FIX FORB NAMES ####
@@ -446,7 +443,8 @@ traits_2018_Peru_cleaned <- traits %>%
          Genus = gsub("Prenettya", "Pernettya", Genus),
          Genus = gsub("Pterichius|Pterichris", "Pterichis", Genus),
          Genus = gsub("Senecia", "Senecio", Genus),
-         Genus = gsub("Werneria ", "Werneria", Genus)
+         Genus = gsub("Werneria ", "Werneria", Genus),
+         Genus = gsub("New_grass", "New grass", Genus)
          ) %>% 
   
   mutate(Genus = ifelse(Genus == "Melpome", "Melpomene", Genus),
@@ -485,7 +483,37 @@ traits_2018_Peru_cleaned <- traits %>%
          Species = ifelse((Genus == "Pterichis" & Species == "sp"), "silvestris", Species),
          Species = ifelse((Genus == "Senecio" & Species == "sp 2"), "sp2", Species),
          Species = ifelse((Genus == "Viola" & Species == "pygmae|pygmaeaa"), "pygmaea", Species),
-         Species = ifelse((Genus == "Unknown" & Species == "hairy leaves"), "hairy leaf", Species)) %>% 
+         Species = ifelse((Genus == "Unknown" & Species == "hairy leaves"), "hairy leaf", Species),
+         
+         # Second round of changes in Island
+         Species = gsub("cylindistachya", "cylindristachya", Species),
+         Species = gsub("hispdus", "hispidus", Species),
+         Species = gsub("cheilantoides", "cheilanthoides", Species),
+         Species = gsub("cimericana", "americana", Species),
+         Species = gsub("vaccinoides", "vaccinioides", Species),
+                        Species = gsub("ernesti", "ernestii", Species),
+                        Species = gsub("cermia", "cernua", Species), 
+                        Species = ifelse((Genus == "Asteraceae" & Species == "hairy leaf"), "sp", Species),
+                        Species = ifelse((Genus == "Belonanthus" & Species == "sp"), "hispidus", Species),
+                        Species = ifelse((Genus == "Elaphoglossum" & Species == "wide"), "amphioxys", Species),
+                        Species = ifelse((Genus == "Eriosorus" & Species == "sp"), "cheilanthoides", Species),
+                        Species = ifelse((Genus == "Galium" & Species == "sp"), "hypocarpium", Species),
+                        Species = ifelse((Genus == "Gentiana" & Species == "sp"), "sedifolia", Species),
+                        Species = ifelse((Genus == "Gnaphalium" & Species == "racemosa"), "dombeyanum", Species),
+                        Species = ifelse((Genus == "Gnaphalium" & Species == "sp"), "dombeyanum", Species),
+                        Species = ifelse((Genus == "Hypericum" & Species == "floribundum"), "andinum", Species),
+                        Species = ifelse((Genus == "Hypericum" & Species == "sp"), "andinum", Species), 
+                        Species = ifelse((Genus == "Hypochaeris" & Species == "sp"), "taraxacoides", Species),
+                        Species = ifelse((Genus == "Viola" & Species == "pygmae"), "pygmaea", Species),
+                        Species = ifelse((Genus == "Lycopodiella" & Species == "sp"), "cernua", Species), 
+                        Species = ifelse((Genus == "Hypericum" & Species == "floribundum"), "andinum", Species),
+                        Species = ifelse((Genus == "Melpomene" & Species == "sp"), "moniliformis", Species),
+                        Species = ifelse((Genus == "Miconia" & Species == "sp"), "rotundifolia", Species), 
+                        Species = ifelse((Genus == "Nertera" & Species == "sp"), "granadensis", Species), 
+                        Species = ifelse((Genus == "Pernettya" & Species == "sp"), "prostrata", Species), 
+                        Species = ifelse((Genus == "Puya" & Species == "sp"), "leptostachya", Species),
+                        Species = ifelse((Genus == "Vaccinium" & Species == "sp"), "floribundum", Species)
+         ) %>% 
   
   mutate(Species = ifelse(ID == "CHL7402", "sp", Species)) %>% 
 
