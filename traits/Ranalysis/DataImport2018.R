@@ -104,6 +104,7 @@ forbs <- read_excel(path = "community/data/2018-03-17_Peru.cover.data_UpdatedFor
 
 forbs <- forbs %>% 
   mutate(cover = as.numeric(gsub("\\+", "0.5", cover))) %>% 
+  filter(!is.na(cover)) %>% # 5 entries with NA
   select(year, site, plot, treatment, Family, Genus, species, cover) %>% 
   filter(species != "Paspallum_bonplandianum") %>% 
   rename(Site = site, PlotID = plot, Treatment = treatment, Year = year, Taxon = species, Cover = cover) %>% 
@@ -113,9 +114,7 @@ forbs <- forbs %>%
          Taxon = gsub(pattern = "_", " ", Taxon)) %>%
   # Found these values on data sheets
   mutate(Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 1, 9, Cover),
-         Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 4, 5, Cover),
-         # assume cover is low for the remaining sp with NA
-         Cover = ifelse(is.na(Cover), 0.5, Cover))
+         Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 4, 5, Cover))
 
 CommunityCover_2018_Peru <- graminoids %>% 
   bind_rows(forbs)
