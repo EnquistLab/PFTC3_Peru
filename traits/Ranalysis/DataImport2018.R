@@ -114,7 +114,8 @@ forbs <- forbs %>%
          Taxon = gsub(pattern = "_", " ", Taxon)) %>%
   # Found these values on data sheets
   mutate(Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 1, 9, Cover),
-         Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 4, 5, Cover))
+         Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 4, 5, Cover)) %>% 
+  filter(Cover != 0)
 
 CommunityCover_2018_Peru <- graminoids %>% 
   bind_rows(forbs)
