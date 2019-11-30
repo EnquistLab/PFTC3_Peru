@@ -9,7 +9,6 @@ pn <- . %>% print(n = Inf)
 
 #### COORDINATES ####
 coordinates <- read_excel("Coordinates_Peru_2018.xlsx")
-head(coordinates)
 
 coordinates_2018 <- coordinates %>% 
   rename(Latitude = lat, Longitude = lon, Elevation = ele, Time = time) %>% 
@@ -119,7 +118,8 @@ forbs <- forbs %>%
 
 CommunityCover_2018_Peru <- graminoids %>% 
   bind_rows(forbs)
-save(CommunityCover_2018_Peru, file = "community/data/CommunityCover_2018_Peru.Rdata")
+write_csv(CommunityCover_2018_Peru, path = "community/CommunityCover_2018_Peru.csv", col_names = TRUE)
+#save(CommunityCover_2018_Peru, file = "community/data/CommunityCover_2018_Peru.Rdata")
 
 
 #### META COMMUNITY DATA ####
@@ -143,7 +143,8 @@ metaCommunity_PE_2018 <- metaCommunity %>%
   mutate(Vascular = Forbs + Graminoids + Shrub,
          Country = "PE",
          Project = "T")
-save(metaCommunity_PE_2018, file = "community/metaCommunity_PE_2018.Rdata")  
+write_csv(metaCommunity_PE_2018, path = "community/metaCommunity_PE_2018.csv", col_names = TRUE)
+#save(metaCommunity_PE_2018, file = "community/metaCommunity_PE_2018.Rdata")  
 
 
 #### LEAF AREA ####
@@ -196,13 +197,10 @@ LeafArea2018 <- LeafArea.raw %>%
 
 
 #### LEAF TRAITS ####
-files <- dir(path = "traits/data/", pattern = "\\.xlsx$", full.names = TRUE)
+files <- dir(path = "traits/raw_trait_data/", pattern = "\\.xlsx$", full.names = TRUE)
 traits.raw <- files[grepl("^(?!~)", basename(files), perl = TRUE)] %>% 
   set_names(basename(.)) %>% 
   map_df(read_excel, col_types = c("text", "date", "text", "numeric", rep("text", 4), rep("numeric", 8), "text", "numeric", "text"), .id = "file")
-
-#save(traits.raw, file = "traits/data/traits.raw.Rdata")
-load("traits/data/traits.raw.Rdata", verbose = TRUE)
 
 # Merge traits and LeafArea  and clean data
 traits <- traits.raw %>% 
@@ -323,7 +321,6 @@ traits <- traits.raw %>%
   
   
   ### MAKE DATA TALK TO OTHER PFTC DATA
-  # !!! Sisyrinchium: leaves are folded: area needs to be doubled and leaf thickness halfed !!!!
   mutate(Bulk = ifelse(ID == "FAJ4238", "bulk", Bulk)) %>% 
   
   # rename variables
@@ -371,10 +368,14 @@ traits <- traits.raw %>%
          Dry_Mass_g = Dry_Mass_Total_g / NrLeaves,
          Leaf_Area_cm2 = Leaf_Area_Total_cm2 / NrLeaves) %>%
   
-  # Calculate SLA, LMDC
-  mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
-         SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
-         LDMC = Dry_Mass_g / Wet_Mass_g) %>% 
+  # Sisyrinchium: leaves are folded: area needs to be doubled and leaf thickness halfed
+  mutate(Leaf_Area_cm2 = ifelse(Genus == "Sisyrinchium", Leaf_Area_cm2 * 2, Leaf_Area_cm2),
+         Leaf_Thickness_1_mm = ifelse(Genus == "Sisyrinchium", Leaf_Thickness_1_mm / 2, Leaf_Thickness_1_mm),
+         Leaf_Thickness_2_mm = ifelse(Genus == "Sisyrinchium", Leaf_Thickness_2_mm / 2, Leaf_Thickness_2_mm),
+         Leaf_Thickness_3_mm = ifelse(Genus == "Sisyrinchium", Leaf_Thickness_3_mm / 2, Leaf_Thickness_3_mm)) %>% 
+
+  # Calculate average leaf thickness
+  mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE)) %>% 
          
          
     ### FIXING COMMENTS
@@ -419,7 +420,7 @@ traits <- traits %>%
 
 
 #### FIX FORB NAMES ####
-traits_2018_Peru_cleaned <- traits %>% 
+traits <- traits %>% 
   # Fix Genus names
   mutate(Genus = gsub("Achemilla|Alchemilla ", "Alchemilla", Genus),
          Genus = gsub("Belonathus|Belonauthus", "Belonanthus", Genus),
@@ -520,11 +521,28 @@ traits_2018_Peru_cleaned <- traits %>%
   # Taxon
   mutate(Taxon = paste(Genus, Species, sep = " ")) %>% 
 # Sort (!!!ADD DRY_MASS_TOTAL_G IF THAT EXISTS!!!!)
-  select(ID, Country, Year, Project, Treatment, Site, Elevation, Latitude, Longitude, Gradient, PlotID, Taxon, Genus, Species, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Wet_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Bulk, NrLeaves, NumberLeavesScan, AreaFlag, DryFlag, WetFlag, Comment)
+  select(ID, Country, Year, Project, Treatment, Site, Elevation, Latitude, Longitude, Gradient, PlotID, Taxon, Genus, Species, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, Wet_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Bulk, NrLeaves, NumberLeavesScan, AreaFlag, DryFlag, WetFlag, Comment)
 
 
-save(traits_2018_Peru_cleaned, file = "traits/data/traits_2018_Peru_cleaned.Rdata")
+#### JOIN DRY MASS ####
+dryweigth <- read_excel(path = "traits/data/Traits_DryMass_Peru_2018.xlsx") %>%
+  filter(!is.na(Dry_Mass_g)) %>% 
+  select(ID, Dry_Mass_g)
 
+# LEAFS are missing FIX!!!
+#dryweigth %>% anti_join(traits, by = "ID") %>% as.data.frame()
+#AGT5582
+#DGT8067
+#DGW6179
+#DGY8804
+
+traits_2018_Peru_cleaned <- traits %>% 
+  left_join(dryweigth, by = "ID") %>% 
+  # Calculate SLA and LDMC
+  mutate(SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
+         LDMC = Dry_Mass_g / Wet_Mass_g)
+
+write_csv(traits_2018_Peru_cleaned, path = "traits/data/traits_2018_Peru_cleaned.csv")
 
 # TO DO !!!
 ### some 17.3.2018 QEL are actually WAY
