@@ -540,7 +540,13 @@ traits_2018_Peru_cleaned <- traits %>%
   left_join(dryweigth, by = "ID") %>% 
   # Calculate SLA and LDMC
   mutate(SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
-         LDMC = Dry_Mass_g / Wet_Mass_g)
+         LDMC = Dry_Mass_g / Wet_Mass_g) %>% 
+  
+  ### ADD DRY MASS FLAGS
+  # Dry mas > Wet mass
+  mutate(DryFlag = ifelse(Dry_Mass_g > Wet_Mass_g, paste(DryFlag, "Dry_larger_Wet", "_"), DryFlag),
+         DryFlag = ifelse(Dry_Mass_g == 0, paste(DryFlag, "too_small_exceed_scale", "_"), DryFlag))
+                                                                      
 
 write_csv(traits_2018_Peru_cleaned, path = "traits/data/traits_2018_Peru_cleaned.csv")
 
