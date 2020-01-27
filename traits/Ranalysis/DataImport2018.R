@@ -8,27 +8,36 @@ library("tpl")
 pn <- . %>% print(n = Inf)
 
 #### COORDINATES ####
-coordinates <- read_excel("Coordinates_Peru_2018.xlsx")
-
-coordinates_2018 <- coordinates %>% 
-  rename(Latitude = lat, Longitude = lon, Elevation = ele, Time = time) %>% 
-  select(Latitude, Longitude, Elevation, name, Time) %>% 
-  filter(!name %in% c("CAR PARK TRES CRUCES", "PUMA", "QUELLO CCASA", "TRECRUCES UPPER", "WAYQECHA")) %>% 
-  mutate(Site = substr(name, 1, 3)) %>%
-  mutate(Plot = substr(name, nchar(name), nchar(name))) %>%
-  mutate(Treatment = substr(name, nchar(name)-2, nchar(name)-1)) %>%
-  mutate(Treatment = gsub(" ", "", Treatment)) %>% 
-  select(-name, -Time) %>% 
-  group_by(Site) %>% 
-  summarise(Latitude = mean(Latitude),
-            Longitude = mean(Longitude))
-
-# for export leaves
-coords <- coordinates_2018 %>% 
-  group_by(Site) %>% 
-  summarise(Lat = mean(Latitude), Long = mean(Longitude))
+# coordinates <- read_excel("Coordinates_Peru_2018.xlsx")
+# 
+# coordinates_2018 <- coordinates %>% 
+#   rename(Latitude = lat, Longitude = lon, Elevation = ele, Time = time) %>% 
+#   select(Latitude, Longitude, Elevation, name, Time) %>% 
+#   filter(!name %in% c("CAR PARK TRES CRUCES", "PUMA", "QUELLO CCASA", "TRECRUCES UPPER", "WAYQECHA")) %>% 
+#   mutate(Site = substr(name, 1, 3)) %>%
+#   mutate(Plot = substr(name, nchar(name), nchar(name))) %>%
+#   mutate(Treatment = substr(name, nchar(name)-2, nchar(name)-1)) %>%
+#   mutate(Treatment = gsub(" ", "", Treatment)) %>% 
+#   select(-name, -Time) %>% 
+#   group_by(Site) %>% 
+#   summarise(Latitude = mean(Latitude),
+#             Longitude = mean(Longitude))
+# 
+# # for export leaves
+# coords <- coordinates_2018 %>% 
+#   group_by(Site) %>% 
+#   summarise(Lat = mean(Latitude), Long = mean(Longitude))
   
 
+coordinates_Peru_2020 <- read_excel("traits/data/Coordinates_Peru_2020.xlsx")
+
+# mean for PFTC data
+metaPE <- coordinates_Peru_2020 %>% 
+  group_by(Site, Treatment) %>% 
+  summarise(Latitude = mean(Latitude, na.rm = TRUE), Longitude = mean(Longitude, na.rm = TRUE), Elevation = mean(Elevation, na.rm = TRUE)) %>% 
+  mutate(Gradient = 1) %>% 
+  filter(Site != "OCC")
+write_csv(metaPE, "metaPE.csv", col_names = TRUE)
 
 ### GRAMINOIDS SP CORRECTIONS FOR TRAITS
 GraminoidsUpdate <- read_excel(path = "community/data/Peru_2018_unique_gramminoids_names_18-10-11.xlsx", col_names = TRUE)
@@ -37,21 +46,6 @@ GraminoidsUpdate <- GraminoidsUpdate %>%
   mutate(Species = replace(Species, Species == "NA", NA),
          Comment = replace(Comment, Comment == "NA", NA))
   
-
-#### SPECIES COVER OLD ####
-#cover <- read_excel("community/data/2018-03-07_Peru.cover.data.xlsx", sheet = "Cover", col_types = c("text", "text", "text", "numeric", "text", "numeric", "text", "text", "text", "text"))
-
-#cover <- cover %>% 
-  #rename(successionalStage = treatment) %>% 
-#mutate(site = plyr::mapvalues(site, c("WAY", "ACJ", "PIL", "TRE", "QUE"), c("WAY_3100m", "ACJ_3400m", "PIL_3600m", "TRE_3700m", "QUE_3900m"))) %>% 
-#mutate(site = factor(site, level = c("WAY_3100m", "ACJ_3400m", "PIL_3600m", "TRE_3700m", "QUE_3900m"))) %>% 
-#mutate(successionalStage = plyr::mapvalues(successionalStage, c("C", "B", "BB"), c("Late", "Early", "Recent"))) %>%
-#mutate(successionalStage = factor(successionalStage, level = c("Late", "Early", "Recent"))) %>% 
-#mutate(species = gsub("Baccharis_triconeata", "Baccharis_tricuneata", species),
-#species = gsub("Cerastium_arvensiforme", "Cerastium_arvense", species)) %>% 
-  #anti_join(species, by = "species") %>% distinct(species) # check with species do not match between species list and cover
-  #left_join(species, by = "species")
-
 
 ### GRAMINOIDS COVER
 GraminoidsCoverNameUpdate <- read_excel(path = "community/data/GramminoidUpdatedNames_18-09-14.xlsx", col_names = TRUE)
@@ -119,7 +113,6 @@ forbs <- forbs %>%
 CommunityCover_2018_Peru <- graminoids %>% 
   bind_rows(forbs)
 write_csv(CommunityCover_2018_Peru, path = "community/CommunityCover_2018_Peru.csv", col_names = TRUE)
-#save(CommunityCover_2018_Peru, file = "community/data/CommunityCover_2018_Peru.Rdata")
 
 
 #### META COMMUNITY DATA ####
@@ -144,7 +137,6 @@ metaCommunity_PE_2018 <- metaCommunity %>%
          Country = "PE",
          Project = "T")
 write_csv(metaCommunity_PE_2018, path = "community/metaCommunity_PE_2018.csv", col_names = TRUE)
-#save(metaCommunity_PE_2018, file = "community/metaCommunity_PE_2018.Rdata")  
 
 
 #### LEAF AREA ####
@@ -249,7 +241,7 @@ traits <- traits.raw %>%
   # REMOVE DUPLICATE ENTRIES
   # Remove duplicate entries of envelopes, exact same information
   group_by(ID, Site, Elevation, Genus, Species, Project, Experiment, Plot, Individual_nr, Height_cm, Wet_mass_g, Dry_mass_g, Leaf_thickness_1_mm, Leaf_thickness_2_mm, Leaf_thickness_3_mm, Bulk, Nr_leaves) %>% 
-  mutate(n = n()) %>% 
+  mutate(n = 1:n()) %>% 
   filter(n == 1) %>% 
   ungroup() %>% 
   
@@ -305,7 +297,8 @@ traits <- traits.raw %>%
          Individual_nr = ifelse(ID == "BJL6171", 3, Individual_nr),
          Experiment = ifelse(ID %in% c("FCY6830", "FCV3487"), "BB", Experiment),
          Experiment = ifelse(ID == "EZC2604", "BB", Experiment),
-         Experiment = ifelse(ID == "EZW1995", "B", Experiment)
+         Experiment = ifelse(ID == "EZW1995", "B", Experiment),
+         Experiment = ifelse(ID == "CPJ9448", "B", Experiment)
          ) %>% 
   
   # Plot
@@ -334,7 +327,10 @@ traits <- traits.raw %>%
          Project = ifelse(is.na(Project), "T", Project),
          NrLeaves = ifelse(is.na(NrLeaves), 1, NrLeaves)) %>% 
   
-  left_join(coordinates_2018, by = "Site") %>% 
+  # REMOVE ELEV, JOIN WITH COORD_2020!!!
+  select(-Elevation) %>% 
+  left_join(coordinates_Peru_2020 %>% select(-Comment), by = c("Site", "Treatment", "PlotID")) %>% 
+  #left_join(coordinates_2018, by = "Site") %>% 
   
   ### CALCULATE AREA, SLA, etc.
   # Species with leaf number = > Leaf nr = 1 because of calculations below
@@ -387,6 +383,8 @@ traits <- traits.raw %>%
          Comment = ifelse(Comment %in% c("CER2406", "HHD4231", "HHC7286", "AER8651", "BZH8056", "HGH0916", "AUO1998", "BRH4842", "AVZ7114", "AYO1679", "AFG9783", "DTF5574", "CZT2801"), paste(Comment, "ThinLeaf_value_from_envelope", sep = "; "), Comment),
          Comment = ifelse(Comment %in% c("EFM5927", "ENH3749", "ENG3094", "EZO8107"), paste(Comment, "ThickLeaf_value_from_envelope", sep = "; "), Comment),
          Comment = ifelse(ID %in% c("EFG2323", "FHL2051"), "NerveMeasured_tooThick", Comment)) %>% 
+  # Leaves with wrong treatment: PIL BB 5 does not exist
+  mutate(Comment == ifelse(Site == "PIL" & Treatment == "BB" & PlotID == 5, "wrongTreatment", Comment)) %>% 
   
   ### FLAG DATA
   ## AREAFLAG
@@ -529,12 +527,8 @@ dryweigth <- read_excel(path = "traits/data/Traits_DryMass_Peru_2018.xlsx") %>%
   filter(!is.na(Dry_Mass_g)) %>% 
   select(ID, Dry_Mass_g)
 
-# LEAFS are missing FIX!!!
+# Check if dryweight join
 #dryweigth %>% anti_join(traits, by = "ID") %>% as.data.frame()
-#AGT5582
-#DGT8067
-#DGW6179
-#DGY8804
 
 traits_2018_Peru_cleaned <- traits %>% 
   left_join(dryweigth, by = "ID") %>% 
@@ -546,7 +540,6 @@ traits_2018_Peru_cleaned <- traits %>%
   # Dry mas > Wet mass
   mutate(DryFlag = ifelse(Dry_Mass_g > Wet_Mass_g, paste(DryFlag, "Dry_larger_Wet", "_"), DryFlag),
          DryFlag = ifelse(Dry_Mass_g == 0, paste(DryFlag, "too_small_exceed_scale", "_"), DryFlag))
-                                                                      
 
 write_csv(traits_2018_Peru_cleaned, path = "traits/data/traits_2018_Peru_cleaned.csv")
 
