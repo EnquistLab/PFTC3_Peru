@@ -2,6 +2,7 @@
 library("readxl")
 library("writexl")
 library("tidyverse")
+library("tidylog")
 library("lubridate")
 library("tpl")
 
@@ -37,7 +38,7 @@ metaPE <- coordinates_Peru_2020 %>%
   summarise(Latitude = mean(Latitude, na.rm = TRUE), Longitude = mean(Longitude, na.rm = TRUE), Elevation = mean(Elevation, na.rm = TRUE)) %>% 
   mutate(Gradient = 1) %>% 
   filter(Site != "OCC")
-write_csv(metaPE, "metaPE.csv", col_names = TRUE)
+#write_csv(metaPE, "metaPE.csv", col_names = TRUE)
 
 ### GRAMINOIDS SP CORRECTIONS FOR TRAITS
 GraminoidsUpdate <- read_excel(path = "community/data/Peru_2018_unique_gramminoids_names_18-10-11.xlsx", col_names = TRUE)
@@ -53,7 +54,7 @@ GraminoidsCoverNameUpdate <- read_excel(path = "community/data/GramminoidUpdated
 load(file = "community/gramm.comm.cover.Rdata", verbose = TRUE)
 graminoids <- gram.comm %>% 
   set_names(make.names(names(.), unique = TRUE)) %>% 
-  as.tibble() %>% 
+  as_tibble() %>% 
   select(-species) %>% 
   rename(species = species.1) %>% 
   mutate(cover = as.numeric(gsub("\\+", "0.5", cover))) %>% 
@@ -112,7 +113,7 @@ forbs <- forbs %>%
 
 CommunityCover_2018_Peru <- graminoids %>% 
   bind_rows(forbs)
-write_csv(CommunityCover_2018_Peru, path = "community/CommunityCover_2018_Peru.csv", col_names = TRUE)
+#write_csv(CommunityCover_2018_Peru, path = "community/CommunityCover_2018_Peru.csv", col_names = TRUE)
 
 
 #### META COMMUNITY DATA ####
@@ -136,7 +137,7 @@ metaCommunity_PE_2018 <- metaCommunity %>%
   mutate(Vascular = Forbs + Graminoids + Shrub,
          Country = "PE",
          Project = "T")
-write_csv(metaCommunity_PE_2018, path = "community/metaCommunity_PE_2018.csv", col_names = TRUE)
+#write_csv(metaCommunity_PE_2018, path = "community/metaCommunity_PE_2018.csv", col_names = TRUE)
 
 
 #### LEAF AREA ####
@@ -194,6 +195,7 @@ traits.raw <- files[grepl("^(?!~)", basename(files), perl = TRUE)] %>%
   set_names(basename(.)) %>% 
   map_df(read_excel, col_types = c("text", "date", "text", "numeric", rep("text", 4), rep("numeric", 8), "text", "numeric", "text"), .id = "file")
 
+
 # Merge traits and LeafArea  and clean data
 traits <- traits.raw %>% 
   
@@ -240,10 +242,30 @@ traits <- traits.raw %>%
   
   # REMOVE DUPLICATE ENTRIES
   # Remove duplicate entries of envelopes, exact same information
-  group_by(ID, Site, Elevation, Genus, Species, Project, Experiment, Plot, Individual_nr, Height_cm, Wet_mass_g, Dry_mass_g, Leaf_thickness_1_mm, Leaf_thickness_2_mm, Leaf_thickness_3_mm, Bulk, Nr_leaves) %>% 
-  mutate(n = 1:n()) %>% 
-  filter(n == 1) %>% 
-  ungroup() %>% 
+  distinct() %>% 
+  
+  # 
+  # Remove non real duplicates (but they are)
+  filter(is.na(Experiment) | Experiment != "Sean") %>% #BTB2511
+  filter(is.na(Comment) | Comment != "Might have been entered double") %>% 
+  filter(!(ID == "BFH6092" & is.na(Date))) %>% #BFH6092
+  filter(!(ID == "CXN2517" & is.na(Date))) %>% #CXN2517
+  filter(!(ID == "AGT5582" & is.na(Date))) %>% #AGT5582
+  filter(!(ID == "DGA5662" & is.na(Date))) %>% #DGA5662
+  filter(!(ID == "DGF0419" & is.na(Date))) %>% #DGF0419
+  filter(!(ID == "DGT8067" & is.na(Date))) %>% #DGT8067
+  filter(!(ID == "DGW6179" & is.na(Date))) %>% #DGW6179
+  filter(!(ID == "DGY8804" & is.na(Date))) %>% #DGY8804
+  filter(!(ID == "DIM3696" & is.na(Date))) %>% #DIM3696
+  filter(!(ID == "DIS0103" & is.na(Date))) %>% #DIM3696
+  filter(!(ID == "DIU7397" & is.na(Date))) %>% #DIU7397
+  filter(!(ID == "DJP8187" & is.na(Date))) %>% #DJP8187
+  filter(!(ID == "DJQ3777" & is.na(Date))) %>% #DJP8187
+  filter(!(ID == "EDT8254" & is.na(Date))) %>% #EDT8254
+  filter(!(ID == "EQX6665" & is.na(Date))) %>% #EQX6665
+  filter(!(ID == "CXN2517" & is.na(Comment))) %>% #CXN2517
+  filter(!(ID == "DEG8722" & is.na(Comment))) %>% #DEG8722
+  
   
   # Remove double entry
   filter(!(ID == "ESK2822" & Species == "P"),
@@ -251,9 +273,9 @@ traits <- traits.raw %>%
   mutate(ID = ifelse((ID == "BTK6307" & Height_cm == 68), "", ID)) %>% 
   
   ### FIX WRONG VARIABLES AND DATA
-  # Dates
-  mutate(Date = ifelse(Date == "2018-05-15", "2018-03-15", Date)) %>% 
-  
+  # Dates (no such date found)
+  mutate(Date = if_else(Date == ymd_hms("2018-05-15 00:00:00"), ymd_hms("2018-03-15 00:00:00"), Date)) %>% 
+
   # Site name
   mutate(Site = plyr::mapvalues(Site, c("AJC", "PIL", "WAY", "ACJ", "TRE", "QUE", "Wayqecha", "Way", "QYE"), c("ACJ", "PIL", "WAY", "ACJ", "TRE", "QUE", "WAY", "WAY", "QUE"))) %>% 
   mutate(Site = ifelse(ID == "AVX6287", "QUE", Site),
@@ -539,13 +561,21 @@ traits_2018_Peru_cleaned <- traits %>%
   ### ADD DRY MASS FLAGS
   # Dry mas > Wet mass
   mutate(DryFlag = ifelse(Dry_Mass_g > Wet_Mass_g, paste(DryFlag, "Dry_larger_Wet", "_"), DryFlag),
-         DryFlag = ifelse(Dry_Mass_g == 0, paste(DryFlag, "too_small_exceed_scale", "_"), DryFlag))
+         DryFlag = ifelse(Dry_Mass_g == 0, paste(DryFlag, "too_small_exceed_scale", "_"), DryFlag)) %>% 
+  #remove final duplicates
+  distinct()
 
 write_csv(traits_2018_Peru_cleaned, path = "traits/data/traits_2018_Peru_cleaned.csv")
 
 # TO DO !!!
 ### some 17.3.2018 QEL are actually WAY
 
+
+dd <- traits_2018_Peru_cleaned %>% 
+  group_by(ID) %>% 
+  mutate(nr = n()) %>% 
+  filter(nr == 2) %>% 
+  arrange(ID)
 
 traits.fixed.genus %>% filter(is.na(PlotID), Project != "Sean") %>% select(ID, Site, PlotID, Individual_nr, Taxon, Genus)
 
