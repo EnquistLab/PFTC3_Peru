@@ -111,15 +111,15 @@ forbs <- forbs %>%
          Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 4, 5, Cover)) %>% 
   filter(Cover != 0)
 
-CommunityCover_2018_Peru <- graminoids %>% 
+PFTC3.1_CommunityCover_2018_Peru <- graminoids %>% 
   bind_rows(forbs)
-#write_csv(CommunityCover_2018_Peru, path = "community/CommunityCover_2018_Peru.csv", col_names = TRUE)
+#write_csv(PFTC3.1_CommunityCover_2018_Peru, path = "community/PFTC3.1_CommunityCover_2018_Peru.csv", col_names = TRUE)
 
 
 #### META COMMUNITY DATA ####
 metaCommunity <- read_excel("community/data/2018-03-15_Peru.cover.data.xlsx", sheet = "Meta")
 
-metaCommunity_PE_2018 <- metaCommunity %>% 
+PFTC3.2_metaCommunity_2018_Peru <- metaCommunity %>% 
   rename(Site = site, Year = year, PlotID = plot, Treatment = treatment, Month = month, Day = day, Elevation = elevation, Slope_percent = slope, Aspect = aspect) %>% 
   mutate(Max_height_cm = (max.height.1.cm + max.height.2.cm + max.height.3.cm + max.height.4.cm + max.height.5.cm)/5,
          Min_Height_cm = (min.height.1.cm + min.height.2.cm + min.height.3.cm + min.height.4.cm + min.height.5.cm)/5,
@@ -135,9 +135,8 @@ metaCommunity_PE_2018 <- metaCommunity %>%
          Rock = as.numeric(gsub("\\+", "0.5", Rock)),
          Litter = as.numeric(gsub("\\+", "0.5", Litter))) %>% 
   mutate(Vascular = Forbs + Graminoids + Shrub,
-         Country = "PE",
-         Project = "T")
-#write_csv(metaCommunity_PE_2018, path = "community/metaCommunity_PE_2018.csv", col_names = TRUE)
+         Country = "PE")
+#write_csv(PFTC3.2_metaCommunity_2018_Peru, path = "community/PFTC3.2_metaCommunity_2018_Peru.csv", col_names = TRUE)
 
 
 #### LEAF AREA ####
@@ -552,7 +551,7 @@ dryweigth <- read_excel(path = "traits/data/Traits_DryMass_Peru_2018.xlsx") %>%
 # Check if dryweight join
 #dryweigth %>% anti_join(traits, by = "ID") %>% as.data.frame()
 
-traits_2018_Peru_cleaned <- traits %>% 
+PFTC3.7_Traits_2018_Peru_cleaned <- traits %>% 
   left_join(dryweigth, by = "ID") %>% 
   # Calculate SLA and LDMC
   mutate(SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
@@ -565,7 +564,7 @@ traits_2018_Peru_cleaned <- traits %>%
   #remove final duplicates
   distinct()
 
-write_csv(traits_2018_Peru_cleaned, path = "traits/data/traits_2018_Peru_cleaned.csv")
+write_csv(PFTC3.7_Traits_2018_Peru_cleaned, path = "traits/data/PFTC3.7_Traits_2018_Peru_cleaned.csv")
 
 # TO DO !!!
 ### some 17.3.2018 QEL are actually WAY
