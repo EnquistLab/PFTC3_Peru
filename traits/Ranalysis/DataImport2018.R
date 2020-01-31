@@ -9,27 +9,6 @@ library("tpl")
 pn <- . %>% print(n = Inf)
 
 #### COORDINATES ####
-# coordinates <- read_excel("Coordinates_Peru_2018.xlsx")
-# 
-# coordinates_2018 <- coordinates %>% 
-#   rename(Latitude = lat, Longitude = lon, Elevation = ele, Time = time) %>% 
-#   select(Latitude, Longitude, Elevation, name, Time) %>% 
-#   filter(!name %in% c("CAR PARK TRES CRUCES", "PUMA", "QUELLO CCASA", "TRECRUCES UPPER", "WAYQECHA")) %>% 
-#   mutate(Site = substr(name, 1, 3)) %>%
-#   mutate(Plot = substr(name, nchar(name), nchar(name))) %>%
-#   mutate(Treatment = substr(name, nchar(name)-2, nchar(name)-1)) %>%
-#   mutate(Treatment = gsub(" ", "", Treatment)) %>% 
-#   select(-name, -Time) %>% 
-#   group_by(Site) %>% 
-#   summarise(Latitude = mean(Latitude),
-#             Longitude = mean(Longitude))
-# 
-# # for export leaves
-# coords <- coordinates_2018 %>% 
-#   group_by(Site) %>% 
-#   summarise(Lat = mean(Latitude), Long = mean(Longitude))
-  
-
 coordinates_Peru_2020 <- read_excel("traits/data/Coordinates_Peru_2020.xlsx")
 
 # mean for PFTC data
@@ -348,10 +327,9 @@ traits <- traits.raw %>%
          Project = ifelse(is.na(Project), "T", Project),
          NrLeaves = ifelse(is.na(NrLeaves), 1, NrLeaves)) %>% 
   
-  # REMOVE ELEV, JOIN WITH COORD_2020!!!
+  # REMOVE ELEV, JOIN WITH COORD_2020
   select(-Elevation) %>% 
   left_join(coordinates_Peru_2020 %>% select(-Comment), by = c("Site", "Treatment", "PlotID")) %>% 
-  #left_join(coordinates_2018, by = "Site") %>% 
   
   ### CALCULATE AREA, SLA, etc.
   # Species with leaf number = > Leaf nr = 1 because of calculations below
