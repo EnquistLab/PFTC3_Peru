@@ -547,24 +547,7 @@ write_csv(PFTC3.7_Traits_2018_Peru_cleaned, path = "traits/data/PFTC3.7_Traits_2
 # TO DO !!!
 ### some 17.3.2018 QEL are actually WAY
 
-
-dd <- traits_2018_Peru_cleaned %>% 
-  group_by(ID) %>% 
-  mutate(nr = n()) %>% 
-  filter(nr == 2) %>% 
-  arrange(ID)
-
-traits.fixed.genus %>% filter(is.na(PlotID), Project != "Sean") %>% select(ID, Site, PlotID, Individual_nr, Taxon, Genus)
-
-traits.fixed.genus %>% group_by(ID) %>% mutate(n = n()) %>% filter(n > 1) %>% arrange(ID) %>% select(ID, Treatment, Site, Elevation, PlotID, Individual_nr)
-
-
-
-
-sp <- traits %>% 
-  select(Genus) %>% arrange(Genus) %>% distinct(Genus)
-#write.csv(sp, file = "sp.csv")
-
-library("taxize")
-names <- gnr_resolve(names = sp$Genus, db = "tnrs")
-tnrs(sp$Genus)
+# Should check names...!!!
+#library("taxize")
+#names <- gnr_resolve(names = sp$Genus, db = "tnrs")
+#tnrs(sp$Genus)
