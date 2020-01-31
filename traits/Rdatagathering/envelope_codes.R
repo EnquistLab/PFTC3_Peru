@@ -11,3 +11,9 @@ all_codes <- crossing(A = LETTERS, B = LETTERS, C = LETTERS) %>%
          hashcode = paste0(code, hash))
 
 save(all_codes, file = "traits/Rdatagathering/envelope_codes.Rdata")
+
+
+devtools::install_github("audhalbritter/PFTCFunctions")
+library("PFTCFunctions")
+all_codes <- get_PFTC_envelope_codes(seed = 1)
+
