@@ -8,6 +8,7 @@ library("tpl")
 
 pn <- . %>% print(n = Inf)
 
+#****************************************************************************
 #### COORDINATES ####
 coordinates_Peru_2020 <- read_excel("traits/data/Coordinates_Peru_2020.xlsx")
 
@@ -19,6 +20,9 @@ metaPE <- coordinates_Peru_2020 %>%
   filter(Site != "OCC")
 #write_csv(metaPE, "metaPE.csv", col_names = TRUE)
 
+
+
+#****************************************************************************
 ### GRAMINOIDS SP CORRECTIONS FOR TRAITS
 GraminoidsUpdate <- read_excel(path = "community/data/Peru_2018_unique_gramminoids_names_18-10-11.xlsx", col_names = TRUE)
 GraminoidsUpdate <- GraminoidsUpdate %>% 
@@ -95,6 +99,7 @@ PFTC3.1_CommunityCover_2018_Peru <- graminoids %>%
 #write_csv(PFTC3.1_CommunityCover_2018_Peru, path = "community/PFTC3.1_CommunityCover_2018_Peru.csv", col_names = TRUE)
 
 
+#****************************************************************************
 #### META COMMUNITY DATA ####
 metaCommunity <- read_excel("community/data/2018-03-15_Peru.cover.data.xlsx", sheet = "Meta")
 
@@ -118,6 +123,8 @@ PFTC3.2_metaCommunity_2018_Peru <- metaCommunity %>%
 #write_csv(PFTC3.2_metaCommunity_2018_Peru, path = "community/PFTC3.2_metaCommunity_2018_Peru.csv", col_names = TRUE)
 
 
+
+#****************************************************************************
 #### LEAF AREA ####
 load("traits/data/LeafArea.raw.Rdata", verbose = TRUE)
 LeafArea2018 <- LeafArea.raw %>% 
@@ -167,6 +174,7 @@ LeafArea2018 <- LeafArea.raw %>%
 
 
 
+#****************************************************************************
 #### LEAF TRAITS ####
 files <- dir(path = "traits/raw_trait_data/", pattern = "\\.xlsx$", full.names = TRUE)
 traits.raw <- files[grepl("^(?!~)", basename(files), perl = TRUE)] %>% 
@@ -540,7 +548,8 @@ PFTC3.7_Traits_2018_Peru_cleaned <- traits %>%
   mutate(DryFlag = ifelse(Dry_Mass_g > Wet_Mass_g, paste(DryFlag, "Dry_larger_Wet", "_"), DryFlag),
          DryFlag = ifelse(Dry_Mass_g == 0, paste(DryFlag, "too_small_exceed_scale", "_"), DryFlag)) %>% 
   #remove final duplicates
-  distinct()
+  distinct() %>% 
+  filter(Project != "Sean")
 
 write_csv(PFTC3.7_Traits_2018_Peru_cleaned, path = "traits/data/PFTC3.7_Traits_2018_Peru_cleaned.csv")
 
