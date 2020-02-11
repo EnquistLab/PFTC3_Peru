@@ -107,7 +107,6 @@ traitsPU.raw %>%
 
 traitsPFTC.raw %>% 
   mutate(Campaign = "PFTC")
-# Remove Sean -> should happen before importing here
 
 
 # Merge PFTC and Puna data sets
