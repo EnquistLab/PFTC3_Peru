@@ -27,3 +27,20 @@ custom_create_PDF(Labels = unusedIDs2$hashcode, name = "traits/Peru2020_myLabels
                   trunc = TRUE, numrow = 12, numcol = 4,
                   page_width = 8.3, page_height = 11.7, width_margin = 0.2,
                   height_margin = 0.7, label_width = 1.811, label_height = 0.5)
+
+
+
+# Barcodes for PFTC5 Peru
+all_codes <- get_PFTC_envelope_codes(seed = 6)
+
+# check if they overlap with pftc3
+PFTC3 <- get_PFTC_envelope_codes(seed = 1)
+all_codes %>% inner_join(PFTC3) # no overlap
+
+all_codes <- all_codes %>% slice(1:4800)
+all_codes <- all_codes %>% slice(1:48)
+custom_create_PDF(Labels = all_codes$hashcode, name = "traits/Peru2020_myLabels",
+                  type = "linear", Fsz = 14, Across = TRUE,
+                  trunc = TRUE, numrow = 12, numcol = 4,
+                  page_width = 8.3, page_height = 11.7, width_margin = 0.2,
+                  height_margin = 0.67, label_width = 1.811, label_height = 0.5)
