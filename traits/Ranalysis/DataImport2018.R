@@ -10,7 +10,7 @@ pn <- . %>% print(n = Inf)
 
 #****************************************************************************
 #### COORDINATES ####
-coordinates_Peru_2020 <- read_excel("traits/data/Coordinates_Peru_2020.xlsx")
+coordinates_Peru_2020 <- read_excel("traits/data/PU.10_PFTC3.10_2020_Peru_Coordinates.xlsx")
 
 # mean for PFTC data
 metaPE <- coordinates_Peru_2020 %>% 
@@ -366,12 +366,12 @@ traits <- traits.raw %>%
          Leaf_Thickness_3_mm = ifelse(ID == "DZL1521", 0.1, Leaf_Thickness_3_mm)) %>% 
   
   # Calculate values on the leaf level (mostly bulk samples)
-  rename(Wet_Mass_Total_g = Wet_Mass_g,
-         Dry_Mass_Total_g = Dry_Mass_g,
-         Leaf_Area_Total_cm2 = Leaf_Area_cm2) %>% 
-  mutate(Wet_Mass_g = Wet_Mass_Total_g / NrLeaves,
-         Dry_Mass_g = Dry_Mass_Total_g / NrLeaves,
-         Leaf_Area_cm2 = Leaf_Area_Total_cm2 / NrLeaves) %>%
+  # rename(Wet_Mass_Total_g = Wet_Mass_g,
+  #        Dry_Mass_Total_g = Dry_Mass_g,
+  #        Leaf_Area_Total_cm2 = Leaf_Area_cm2) %>% 
+  # mutate(Wet_Mass_g = Wet_Mass_Total_g / NrLeaves,
+  #        Dry_Mass_g = Dry_Mass_Total_g / NrLeaves,
+  #        Leaf_Area_cm2 = Leaf_Area_Total_cm2 / NrLeaves) %>%
   
   # Sisyrinchium: leaves are folded: area needs to be doubled and leaf thickness halfed
   mutate(Leaf_Area_cm2 = ifelse(Genus == "Sisyrinchium", Leaf_Area_cm2 * 2, Leaf_Area_cm2),
@@ -388,7 +388,7 @@ traits <- traits.raw %>%
          Comment = ifelse(ID == "EHP2066", paste(Comment, "empty_scan", sep = ";_"), Comment),
          Comment = ifelse(ID == "AWE1352", "scan_missing", Comment),
          Comment = ifelse(ID == "CVV7522", "smallLeaf_NoWetMass", Comment),
-         Comment = ifelse(is.na(Leaf_Area_Total_cm2), paste(Comment, "Missing scan", sep = "; "), Comment),
+         Comment = ifelse(is.na(Leaf_Area_cm2), paste(Comment, "Missing scan", sep = "; "), Comment),
          Comment = ifelse(Comment %in% c("CER2406", "HHD4231", "HHC7286", "AER8651", "BZH8056", "HGH0916", "AUO1998", "BRH4842", "AVZ7114", "AYO1679", "AFG9783", "DTF5574", "CZT2801"), paste(Comment, "ThinLeaf_value_from_envelope", sep = "; "), Comment),
          Comment = ifelse(Comment %in% c("EFM5927", "ENH3749", "ENG3094", "EZO8107"), paste(Comment, "ThickLeaf_value_from_envelope", sep = "; "), Comment),
          Comment = ifelse(ID %in% c("EFG2323", "FHL2051"), "NerveMeasured_tooThick", Comment)) %>% 
@@ -405,7 +405,7 @@ traits <- traits.raw %>%
 
   # Empty or corrupted scan
   mutate(AreaFlag = ifelse(ID == "BMB7274", "EmptyScan_noArea", ""),
-         AreaFlag = ifelse(is.na(Leaf_Area_Total_cm2), paste(AreaFlag, "Missing scan", sep = "; "), AreaFlag)) %>% 
+         AreaFlag = ifelse(is.na(Leaf_Area_cm2), paste(AreaFlag, "Missing scan", sep = "; "), AreaFlag)) %>% 
   mutate(AreaFlag = ifelse(ID == "EHP2066", "CorruptedScan_noArea", "")) %>% 
   mutate(AreaFlag = ifelse(ID == "FDF1809", "CorruptedScan_noArea", "")) %>% 
   mutate(AreaFlag = ifelse(ID == "AUB2092", "ScannedOnWrongSide_noArea", "")) %>% 
@@ -528,7 +528,7 @@ traits <- traits %>%
   # Taxon
   mutate(Taxon = paste(Genus, Species, sep = " ")) %>% 
 # Sort (!!!ADD DRY_MASS_TOTAL_G IF THAT EXISTS!!!!)
-  select(ID, Country, Year, Project, Treatment, Site, Elevation, Latitude, Longitude, Gradient, PlotID, Taxon, Genus, Species, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, Wet_Mass_Total_g, Leaf_Area_Total_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Bulk, NrLeaves, NumberLeavesScan, AreaFlag, DryFlag, WetFlag, Comment)
+  select(ID, Country, Year, Project, Treatment, Site, Elevation, Latitude, Longitude, Gradient, PlotID, Taxon, Genus, Species, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Bulk, NrLeaves, NumberLeavesScan, AreaFlag, DryFlag, WetFlag, Comment)
 
 
 #### JOIN DRY MASS ####
@@ -541,9 +541,21 @@ dryweigth <- read_excel(path = "traits/data/Traits_DryMass_Peru_2018.xlsx") %>%
 
 PFTC3.7_Traits_2018_Peru_cleaned <- traits %>% 
   left_join(dryweigth, by = "ID") %>% 
+  # Calculate values on the leaf level (mostly bulk samples)
+  rename(Wet_Mass_Total_g = Wet_Mass_g,
+         Dry_Mass_Total_g = Dry_Mass_g,
+         Leaf_Area_Total_cm2 = Leaf_Area_cm2) %>% 
+  mutate(Wet_Mass_g = Wet_Mass_Total_g / NrLeaves,
+         Dry_Mass_g = Dry_Mass_Total_g / NrLeaves,
+         Leaf_Area_cm2 = Leaf_Area_Total_cm2 / NrLeaves) %>%
+  # Wet and dry mass do not make sense for these species
+  mutate(Dry_Mass_g = ifelse(Genus %in% c("Baccharis", "Lycopodiella", "Lycopodium"), NA_real_, Dry_Mass_g),
+         Wet_Mass_g = ifelse(Genus %in% c("Baccharis", "Lycopodiella", "Lycopodium"), NA_real_, Wet_Mass_g),
+         Leaf_Area_cm2 = ifelse(Genus %in% c("Baccharis", "Lycopodiella", "Lycopodium"), NA_real_, Leaf_Area_cm2)) %>%
   # Calculate SLA and LDMC
   mutate(SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
          LDMC = Dry_Mass_g / Wet_Mass_g) %>% 
+
   
   ### ADD DRY MASS FLAGS
   # Dry mas > Wet mass
