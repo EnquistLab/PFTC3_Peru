@@ -38,7 +38,7 @@ PFTC3 <- get_PFTC_envelope_codes(seed = 1)
 all_codes %>% inner_join(PFTC3) # no overlap
 
 all_codes <- all_codes %>% slice(1:4800)
-all_codes <- all_codes %>% slice(1:48)
+#all_codes <- all_codes %>% slice(1:48)
 custom_create_PDF(Labels = all_codes$hashcode, name = "traits/Peru2020_myLabels",
                   type = "linear", Fsz = 14, Across = TRUE,
                   trunc = TRUE, numrow = 12, numcol = 4,
