@@ -28,11 +28,42 @@ loop.files <-  function(files){
 
 
 # test run.ij
-#run.ij(set.directory = "~/Desktop/TestLeaf", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.1, trim.pixel = 58, trim.pixel2 = 150, save.image = TRUE)
+# run.ij(set.directory = "/Volumes/INTENSO/LeafScans/20-03-12/Problems/", distance.pixel = 237, known.distance = 2, log = TRUE, low.size = 0.1, trim.pixel = 58, trim.pixel2 = 150, save.image = TRUE)
 
 
 
-# Calculate leaf area
+###########################################################################
+# Calculate leaf area 2020
+list.of.files <- dir(path = paste0("/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/20-03-15"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+new.folder <- "/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/Temp"
+output.folder <- "/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/Output/20-03-15"
+
+
+LeafArea.raw <- plyr::ldply(list.of.files, loop.files)
+
+dim(LeafArea.raw)
+write_csv(LeafArea.raw, path = "traits/data/2020/LeafArea.raw_20-03-15.csv")
+
+read_csv(file = "traits/data/2020/LeafArea.raw_20-03-12.csv") %>% 
+  bind_rows(read_csv(file = "traits/data/2020/LeafArea.raw_20-03-13.Rdata")) %>% 
+  bind_rows(read_csv(file = "traits/data/2020/LeafArea.raw_20-03-14.Rdata")) %>% 
+  bind_rows(read_csv(file = "traits/data/2020/LeafArea.raw_20-03-15.Rdata"))
+
+
+
+# remove duplicate leaves
+LeafArea %>% 
+  group_by(ID) %>% 
+  filter()
+
+# send leaf area code to fiorella and samuel
+# fngonzales@uc.cl
+# samupastor27@gmail.com
+
+
+
+###########################################################################
+# Calculate leaf area 2018
 list.of.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
 new.folder <- "/Volumes/PFT3/Temp"
 output.folder <- "/Volumes/PFT3/Output_Peru_10-07-2018"
@@ -48,7 +79,7 @@ LeafArea %>%
   filter()
 
 
-
+###########################################################################
 #### Sean leaf areas without loop
 
 file.list.sean <- list.files(path = "C:/Users/cpo082/Desktop/leaf
@@ -63,6 +94,4 @@ sean_cropped_LA_new <- data.frame(ID = names(unlist(sean_area
 
 save(sean_cropped_LA_new, file = "C:/Users/cpo082/Desktop/leaf
      data/sean_cropped_LA_new.Rdata")
-
-
 
