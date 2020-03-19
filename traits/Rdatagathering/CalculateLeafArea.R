@@ -1,11 +1,14 @@
+###########################
+### CALCULATE LEAF AREA ###
+###########################
 
-### CALCULATE LEAF AREA
 
-# load libraries
+#### LOAD LIBRARY
 devtools::install_github("richardjtelford/LeafArea")
 library(LeafArea)
 
-# Function to calculate leaf area
+
+#### Function to calculate leaf area
 loop.files <-  function(files){
   
   file.copy(files, new.folder)
@@ -33,37 +36,31 @@ loop.files <-  function(files){
 
 
 ###########################################################################
-# Calculate leaf area 2020
+#### Calculate leaf area for 2020 data
+# make a list of files, temporary folder and output folder
 list.of.files <- dir(path = paste0("/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/20-03-15"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
 new.folder <- "/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/Temp"
 output.folder <- "/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/Output/20-03-15"
 
-
+# Run function
 LeafArea.raw <- plyr::ldply(list.of.files, loop.files)
 
+# save data as csv
 dim(LeafArea.raw)
 write_csv(LeafArea.raw, path = "traits/data/2020/LeafArea.raw_20-03-15.csv")
 
-read_csv(file = "traits/data/2020/LeafArea.raw_20-03-12.csv") %>% 
-  bind_rows(read_csv(file = "traits/data/2020/LeafArea.raw_20-03-13.Rdata")) %>% 
-  bind_rows(read_csv(file = "traits/data/2020/LeafArea.raw_20-03-14.Rdata")) %>% 
-  bind_rows(read_csv(file = "traits/data/2020/LeafArea.raw_20-03-15.Rdata"))
 
+# Read in all the files and bind them together
+LeafArea <- read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03-12.csv") %>% 
+  bind_rows(read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03-13.csv")) %>% 
+  bind_rows(read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03-14.csv")) %>% 
+  bind_rows(read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03-15.csv"))
 
-
-# remove duplicate leaves
-LeafArea %>% 
-  group_by(ID) %>% 
-  filter()
-
-# send leaf area code to fiorella and samuel
-# fngonzales@uc.cl
-# samupastor27@gmail.com
 
 
 
 ###########################################################################
-# Calculate leaf area 2018
+#### Calculate leaf area for 2018 data
 list.of.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
 new.folder <- "/Volumes/PFT3/Temp"
 output.folder <- "/Volumes/PFT3/Output_Peru_10-07-2018"
