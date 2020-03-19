@@ -50,15 +50,6 @@ dim(LeafArea.raw)
 write_csv(LeafArea.raw, path = "traits/data/2020/LeafArea.raw_20-03-15.csv")
 
 
-# Read in all the files and bind them together
-LeafArea <- read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03-12.csv") %>% 
-  bind_rows(read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03-13.csv")) %>% 
-  bind_rows(read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03-14.csv")) %>% 
-  bind_rows(read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03-15.csv"))
-
-
-
-
 ###########################################################################
 #### Calculate leaf area for 2018 data
 list.of.files <- dir(path = paste0("/Volumes/PFT3/Peru_leaves"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
