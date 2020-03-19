@@ -13,16 +13,10 @@ library("patchwork")
 # get valid IDs
 all_codes <- get_PFTC_envelope_codes(seed = 6)
 
-# # Read in several tables (might need to adjust this code)
-# files <- dir(path = "traits/raw_trait_data/", pattern = "\\.xlsx$", full.names = TRUE)
-# traits.raw <- files[grepl("^(?!~)", basename(files), perl = TRUE)] %>% 
-#   set_names(basename(.)) %>% 
-#   map_df(read_excel, col_types = c("text", "numeric", "text", "numeric", rep("text", 4), rep("numeric", 9), "text"), .id = "file")
-
 
 # Data lists
 nr.col <- 21
-ID.list <- all_codes$hashcode # MAKE AN OPTION TO SLECT CERTAIN ROWS
+ID.list <- all_codes$hashcode
 day.list <- c(12, 13, 14, 15, 16, 17)
 character.list <- c("file", "ID", "Site", "Genus", "Species", "Project", "Experiment", "Remark")
 numeric.list <- c("Day", "Elevation", "Plot_ID", "Individual_nr", "Leaf_nr", "Plant_Height_cm", "Plant_Length_cm", "Bulk_nr_leaves", "Length_cm", "Wet_Mass_g", "Leaf_Thickness_1_mm", "Leaf_Thickness_2_mm", "Leaf_Thickness_3_mm")
