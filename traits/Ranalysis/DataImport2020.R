@@ -146,7 +146,7 @@ CheckSpreadsheet(traits)
 traits_cleaned <- traits %>% 
   left_join(LeafArea, by = "ID")
 
-write_csv(traits_cleaned, path = "traits/PFTC5_Peru_2020_LeafTraits_cleaned_20-03-19")
+write_csv(traits_cleaned, path = "traits/PFTC5_Peru_2020_LeafTraits_cleaned_20-03-19.csv")
 
 # missing Plot_ID
 traits %>% filter(is.na(Plot_ID) & Project == "T") %>% arrange(Genus) %>% as.data.frame()
