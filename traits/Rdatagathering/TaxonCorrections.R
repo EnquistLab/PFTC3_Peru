@@ -9,7 +9,10 @@ GenusDictionary2020 <- read.table(header = TRUE,
                                   Caramagrostis Calamagrostis
                                   COrtaderia Cortaderia
                                   Helenia Halenia
+                                  Jasmesonia Jamesonia
                                   PAspalum Paspalum
+                                  Oreomirhys Oreomythys
+                                  Oreomyrhys Oreomythys
                                   rhynchospora Rhynchospora
                                   Rhyncospora Rhynchospora
                                   Rynchospora Rhynchospora
@@ -34,6 +37,8 @@ SpeciesDictionary2020 <- read.table(header = TRUE,
                                     chelantoides cheilanthoides
                                     ennestii ernestii
                                     tanaxacoides taraxacoides
+                                    aistonia  alstonii
+                                    alstonia alstonii
                                     arbiculata orbiculata
                                     racem racemosa
                                     racemoss racemosa
