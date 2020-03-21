@@ -92,9 +92,7 @@ forbs <- forbs %>%
   # Found these values on data sheets
   mutate(Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 1, 9, Cover),
          Cover = ifelse(is.na(Cover) & Genus == "Stevia" & Treatment == "C" & PlotID == 4, 5, Cover)) %>% 
-  filter(Cover != 0) %>% 
-  # remove Cortaderia bifida which is a grass
-  filter(species == "Cortaderia_bifida")
+  filter(Cover != 0)
 
 PFTC3.1_CommunityCover_2018_Peru <- graminoids %>% 
   bind_rows(forbs)
