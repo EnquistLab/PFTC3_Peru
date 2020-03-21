@@ -11,8 +11,10 @@ GenusDictionary2020 <- read.table(header = TRUE,
                                   Helenia Halenia
                                   Jasmesonia Jamesonia
                                   PAspalum Paspalum
-                                  Oreomirhys Oreomythys
-                                  Oreomyrhys Oreomythys
+                                  Oreomirhys Oreomyrrhis
+                                  Oreomyrhys Oreomyrrhis
+                                  Oriethales Oreithales
+                                  Oriotrophium Oritrophium
                                   rhynchospora Rhynchospora
                                   Rhyncospora Rhynchospora
                                   Rynchospora Rhynchospora
@@ -27,6 +29,8 @@ SpeciesDictionary2020 <- read.table(header = TRUE,
                                     tricoides trichodes
                                     'hans meyeni' hans-meyeri
                                     hans-meyen hans-meyeri
+                                    beauty 'cf. macrophylla'
+                                    tri trichophylla
                                     nigida rigida
                                     boliniensis boliviensis
                                     bolivuensis boliviensis
@@ -35,6 +39,7 @@ SpeciesDictionary2020 <- read.table(header = TRUE,
                                     pigmeo pygmaea
                                     cheilantoides cheilanthoides
                                     chelantoides cheilanthoides
+                                    sharp sp4
                                     ennestii ernestii
                                     tanaxacoides taraxacoides
                                     aistonia  alstonii
@@ -47,6 +52,7 @@ SpeciesDictionary2020 <- read.table(header = TRUE,
                                     hieracoides hieracioides
                                     ore oreocharis
                                     pugens pungens
-                                    postrata prostrata"
+                                    postrata prostrata
+                                    spicata spicigera"
 )
 
