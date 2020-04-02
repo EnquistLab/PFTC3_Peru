@@ -15,6 +15,7 @@ GenusDictionary2020 <- read.table(header = TRUE,
                                   Oreomyrhys Oreomyrrhis
                                   Oriethales Oreithales
                                   Oriotrophium Oritrophium
+                                  Oritrophium Oritrophium
                                   rhynchospora Rhynchospora
                                   Rhyncospora Rhynchospora
                                   Rynchospora Rhynchospora
@@ -53,6 +54,7 @@ SpeciesDictionary2020 <- read.table(header = TRUE,
                                     ore oreocharis
                                     pugens pungens
                                     postrata prostrata
-                                    spicata spicigera"
+                                    spicata spicigera
+                                    andinium andinum"
 )
 
