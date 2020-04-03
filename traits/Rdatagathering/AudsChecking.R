@@ -22,6 +22,23 @@ setdiff(LeafArea2018$ID, ID.list)
 setdiff(traits$ID, ID.list)
 
 
+# Find duplicate leaves
+traits %>% 
+  group_by(Project, Experiment, Site, Plot_ID, Taxon, Individual_nr, Leaf_nr) %>%
+  mutate(n = n()) %>% 
+  filter(n > 1)
+
+# Find different plant height per individual
+dd <- traits %>% 
+  group_by(Project, Experiment, Site, Plot_ID, Taxon, Individual_nr) %>%
+  mutate(n = n()) %>% 
+  filter(n > 1) %>% 
+  filter(max(Plant_Height_cm) != min(Plant_Height_cm)) %>% 
+  arrange(Project, Site, Taxon, Experiment, Plot_ID, Individual_nr, Leaf_nr, Plant_Height_cm) %>% 
+  select(ID, Project, Site, Taxon, Experiment, Plot_ID, Individual_nr, Leaf_nr, Plant_Height_cm, Plant_Length_cm) %>% as.data.frame()
+#writexl::write_xlsx(dd, path = "traits/dd.xlsx")
+
+
 #### Source to load libraries, data lists and functions ####
 source("traits/Rdatagathering/CheckSpreadsheet.R")
 CheckSpreadsheet(dat = traits)
