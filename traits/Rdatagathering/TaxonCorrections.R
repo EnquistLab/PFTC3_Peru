@@ -8,6 +8,7 @@ GenusDictionary2020 <- read.table(header = TRUE,
                                   Belonathus Belonanthus
                                   Caramagrostis Calamagrostis
                                   COrtaderia Cortaderia
+                                  Gautheria Gaultheria
                                   Helenia Halenia
                                   Jasmesonia Jamesonia
                                   PAspalum Paspalum
@@ -36,8 +37,10 @@ SpeciesDictionary2020 <- read.table(header = TRUE,
                                     boliniensis boliviensis
                                     bolivuensis boliviensis
                                     pinchinchensis pichinchensis
+                                    pinchenchensis pichinchensis
                                     pigmea pygmaea
                                     pigmeo pygmaea
+                                    pygmea pygmaea
                                     cheilantoides cheilanthoides
                                     chelantoides cheilanthoides
                                     sharp sp4
