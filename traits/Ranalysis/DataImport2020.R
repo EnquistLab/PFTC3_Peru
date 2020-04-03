@@ -33,11 +33,18 @@ LeafArea <- LeafArea.raw %>%
   mutate(ID = recode(ID, "SEAN1.j" = "SEAN1"))
   
 # Check wrong IDs
-setdiff(LeafArea$ID, all_codes$hashcode)
+#setdiff(LeafArea$ID, all_codes$hashcode)
 # 2 problematic IDs: "out.jpe", "2020-03"
 # "SEAN1.j" exists in trait data
 
 LeafArea <- LeafArea %>% 
+  filter(!c(ID == "BVL6152" & LeafArea %in% c(0.22, 0.005, 0.006)),
+         !c(ID == "BWJ5879" & LeafArea %in% c(0.159, 0.006, 0.006)),
+         !c(ID == "BXQ0542" & LeafArea %in% c(0.02)),
+         !c(ID == "BXU2822" & LeafArea %in% c(0.029)),
+         !c(ID == "CXC6033" & LeafArea %in% c(86.3, 0.023)),
+         !c(ID == "CUM5583" & LeafArea %in% c(0.105)),
+         !c(ID == "BVP4602" & LeafArea %in% c(0.033))) %>% 
   group_by(ID) %>% 
   summarise(LeafArea_cm2 = sum(LeafArea),
             nLeafScan = n()) %>% 
@@ -66,6 +73,7 @@ traits.raw <- traits.raw %>%
 
 # Load corrections
 corrections <- read_excel(path = "traits/data/PFTC5-DataCleaning.xlsx")
+leafScanProblems <- read_excel(path = "traits/data/LeafScanProblems.xlsx")
 
 # Source checking file
 source("traits/Rdatagathering/CheckSpreadsheet.R")
@@ -82,6 +90,10 @@ traits <- traits.raw %>%
          ID = gsub("ADZ1845", "ADY1845", ID),
          ID = gsub("CZQ3610", "CYQ3610", ID),
          ID = gsub("CZU0738", "CYU0738", ID),
+         ID = gsub("CBN2433", "CBM2433", ID),
+         ID = gsub("CGY2493", "CGU2493", ID),
+         ID = gsub("BLF6180", "BLE6180", ID),
+         ID = gsub("CQT3635", "CQT3656", ID),
          ID = gsub("ADY3452", "ADZ3452", ID)) %>% 
   
   #Remove duplicate TRE-C-5-Lachemilla orbiculata
@@ -144,8 +156,6 @@ traits <- traits.raw %>%
   mutate(Plant_Length_cm = if_else(!is.na(Length_cm) & Genus %in% c("Carex", "Paspalum"), Length_cm, Plant_Length_cm)) %>% 
   # remove length for vaccinium
   mutate(Length_cm = if_else(!is.na(Length_cm) & Genus %in% c("Vaccinium", "Carex", "Paspalum"), NA_real_, Length_cm)) %>% 
-  # Bulk_nr_leaves: NA for Baccharis, Hypericum, Lycopodium
-  mutate(Bulk_nr_leaves = if_else(Genus %in% c("Baccharis", "Hypericum", "Lycopodium"), NA_real_, Bulk_nr_leaves)) %>% 
   
   mutate(Taxon = paste(Genus, Species, sep = "_")) %>% 
 
@@ -163,78 +173,41 @@ traits <- traits.raw %>%
   } else {
     n == 1
   }) %>%
+  select(-n) %>% 
 
-  #### VERY SIMPLE SOLUTION, NEEDS MORE CHECKING !!!
-  mutate(Bulk_nr_leaves = coalesce(Bulk_nr_leaves, as.numeric(nLeafScan)))
+  # Nr of leaves
+  left_join(leafScanProblems, by = "ID") %>% 
+  mutate(Bulk_nr_leaves = if_else(NrLeaves == "multiple", nLeafScan, Bulk_nr_leaves)) %>% 
+  #mutate(Bulk_nr_leaves = coalesce(Bulk_nr_leaves, as.numeric(nLeafScan)))
+  # Bulk_nr_leaves: NA for Baccharis, Hypericum, Lycopodium
+  mutate(Bulk_nr_leaves = if_else(Genus %in% c("Baccharis", "Hypericum", "Lycopodium"), NA_real_, Bulk_nr_leaves))
 
 
-# Find duplicate leaves
-traits %>% 
-  group_by(Project, Experiment, Site, Plot_ID, Taxon, Individual_nr, Leaf_nr) %>%
-  mutate(n = n()) %>% 
-  filter(n > 1)
-
-# Find different plant height per individual
-dd <- traits %>% 
-  group_by(Project, Experiment, Site, Plot_ID, Taxon, Individual_nr) %>%
-  mutate(n = n()) %>% 
-  filter(n > 1) %>% 
-  filter(max(Plant_Height_cm) != min(Plant_Height_cm)) %>% 
-  arrange(Project, Site, Taxon, Experiment, Plot_ID, Individual_nr, Leaf_nr, Plant_Height_cm) %>% 
-  select(ID, Project, Site, Taxon, Experiment, Plot_ID, Individual_nr, Leaf_nr, Plant_Height_cm, Plant_Length_cm) %>% as.data.frame()
-#writexl::write_xlsx(dd, path = "traits/dd.xlsx")
-
+  
 
 # Check scans
 #Changing bulk number of leaves for TRE C Plot5 - Lachemilla orbiculata
-bulk number of leaves = NA
-CFG0732
-CFK2286
-BKP5877
-AYF7496
-CEE0397
-AYG1241
-CXA8168
-AYI4751
-CEA4386
-CZN4729
-CZJ5895
-CZE7072
-CZF0686
-CZA2309
+# bulk number of leaves = NA
+# CFG0732
+# CFK2286
+# BKP5877
+# AYF7496
+# CEE0397
+# AYG1241
+# CXA8168
+# AYI4751
+# CEA4386
+# CZN4729
+# CZJ5895
+# CZE7072
+# CZF0686
+# CZA2309
 
   
 #write_csv(traits_cleaned, path = "traits/PFTC5_Peru_2020_LeafTraits_cleaned_20-03-22.csv")
 
-# missing Plot_ID
-# traits %>% filter(is.na(Plot_ID) & Project == "T") %>% arrange(Genus) %>% as.data.frame()
-# 
-# traits %>% filter(Site == "ACJ", Genus == "Halenia", Experiment == "C", Plot_ID == 4) %>% arrange(Plot_ID, Individual_nr, Leaf_nr) %>% as.data.frame()
-# 
 
-
-
-# Bulk
-traits_cleaned %>% 
-  select(Genus, Plant_Height_cm, Plant_Length_cm, Bulk_nr_leaves, Length_cm) %>% 
-  filter(!is.na(Plant_Height_cm)) %>% distinct(Genus, Bulk_nr_leaves) %>% arrange(Genus, Bulk_nr_leaves) %>% pn
-
-# compare nr on scan and Bulk_nr_leaves, if not match, then check scans
-# otherwise fix number
-# NA => 1
-traits_cleaned %>% 
-  select(ID, Genus, Bulk_nr_leaves, nLeafScan) %>% 
-  filter(!is.na(Bulk_nr_leaves)) %>% 
-  mutate(diff = Bulk_nr_leaves - nLeafScan) %>% 
-  filter(diff > 0 | diff < 0)
-
-all_codes %>% filter(hashcode == "CBN2433")
-traits %>% filter(ID == "CBN2433") %>% as.data.frame()
-LeafArea %>% filter(ID == "CCBN2433")
-traits %>% anti_join(LeafArea, by = "ID") %>% select(ID)
 # TODO!!!
-# wrong IDs: CBN2433, CGY2493, BLF6180, CQT3635
-
 ### Trait people
 # BMP6395: Check community data, which plot has Carex pinchinchensis; traits %>% filter(is.na(Plot_ID) & Project == "T") %>% arrange(Genus) %>% as.data.frame()
 
