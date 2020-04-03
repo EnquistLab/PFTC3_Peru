@@ -38,16 +38,16 @@ loop.files <-  function(files){
 ###########################################################################
 #### Calculate leaf area for 2020 data
 # make a list of files, temporary folder and output folder
-list.of.files <- dir(path = paste0("/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/20-03-15"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
-new.folder <- "/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/Temp"
-output.folder <- "/Volumes/INTENSO/PFTC5_Peru_2020_LeafScans/Output/20-03-15"
+list.of.files <- dir(path = paste0("/Volumes/PFTC3_Peru/PFTC5/PFTC5_Peru_2020_LeafScans/PFTC5_leaf_scans_post_exodus/"), pattern = "jpeg|jpg", recursive = TRUE, full.names = TRUE)
+new.folder <- "/Volumes/PFTC3_Peru/PFTC5/PFTC5_Peru_2020_LeafScans/Temp/"
+output.folder <- "/Volumes/PFTC3_Peru/PFTC5/PFTC5_Peru_2020_LeafScans/Output/Post_exodus/"
 
 # Run function
 LeafArea.raw <- plyr::ldply(list.of.files, loop.files)
 
 # save data as csv
 dim(LeafArea.raw)
-write_csv(LeafArea.raw, path = "traits/data/2020/LeafArea.raw_20-03-15.csv")
+write_csv(LeafArea.raw, path = "traits/data/2020/RawLeafArea/LeafArea.raw_exodus.csv")
 
 
 ###########################################################################
