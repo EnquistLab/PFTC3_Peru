@@ -173,17 +173,20 @@ traits <- traits.raw %>%
   } else {
     n == 1
   }) %>%
-  select(-n) %>% 
+  select(-n) 
 
   # Nr of leaves
+traits_cleaned <- traits %>% 
   left_join(leafScanProblems, by = "ID") %>% 
+  mutate(nLeafScan = as.double(nLeafScan)) %>% 
   mutate(Bulk_nr_leaves = if_else(NrLeaves == "multiple", nLeafScan, Bulk_nr_leaves)) %>% 
+  select(-NrLeaves) %>% 
   #mutate(Bulk_nr_leaves = coalesce(Bulk_nr_leaves, as.numeric(nLeafScan)))
   # Bulk_nr_leaves: NA for Baccharis, Hypericum, Lycopodium
   mutate(Bulk_nr_leaves = if_else(Genus %in% c("Baccharis", "Hypericum", "Lycopodium"), NA_real_, Bulk_nr_leaves))
-
-
   
+#write_csv(traits_cleaned, path = "traits/PFTC5_Peru_2020_LeafTraits_cleaned_20-04-02.csv")
+
 
 # Check scans
 #Changing bulk number of leaves for TRE C Plot5 - Lachemilla orbiculata
@@ -202,9 +205,6 @@ traits <- traits.raw %>%
 # CZE7072
 # CZF0686
 # CZA2309
-
-  
-#write_csv(traits_cleaned, path = "traits/PFTC5_Peru_2020_LeafTraits_cleaned_20-03-22.csv")
 
 
 # TODO!!!
