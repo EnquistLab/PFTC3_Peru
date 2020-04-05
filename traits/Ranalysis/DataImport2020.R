@@ -29,30 +29,35 @@ LeafArea.raw <- read_csv(file = "traits/data/2020/RawLeafArea/LeafArea.raw_20-03
 
 #LeafArea2020
 LeafArea <- LeafArea.raw %>% 
+  # remove leaves that has been scanned 3x
+  filter(!grepl("CXX4125_1|CXX4125_2|CRE5297 2", ID)) %>% 
   mutate(ID = substr(ID, 1, 7)) %>% 
   mutate(ID = recode(ID, "SEAN1.j" = "SEAN1"))
-  
+
 # Check wrong IDs
 #setdiff(LeafArea$ID, all_codes$hashcode)
 # 2 problematic IDs: "out.jpe", "2020-03"
 # "SEAN1.j" exists in trait data
 
 LeafArea <- LeafArea %>% 
+  # Remove black areas from the scans that are not leaves
   filter(!c(ID == "BVL6152" & LeafArea %in% c(0.22, 0.005, 0.006)),
          !c(ID == "BWJ5879" & LeafArea %in% c(0.159, 0.006, 0.006)),
          !c(ID == "BXQ0542" & LeafArea %in% c(0.02)),
          !c(ID == "BXU2822" & LeafArea %in% c(0.029)),
-         !c(ID == "CXC6033" & LeafArea %in% c(86.3, 0.023)),
+         !c(ID == "CXC6033" & LeafArea %in% c(0.023, 0.127, 86.3)),
          !c(ID == "CUM5583" & LeafArea %in% c(0.105)),
-         !c(ID == "BVP4602" & LeafArea %in% c(0.033))) %>% 
+         !c(ID == "BVP4602" & LeafArea %in% c(0.033))) %>%
   group_by(ID) %>% 
   summarise(LeafArea_cm2 = sum(LeafArea),
             nLeafScan = n()) %>% 
+  # not sure why, but code above does not work for this leaf
+  mutate(LeafArea_cm2 = if_else(ID == "CXC6033", 2.62, LeafArea_cm2))
   distinct(ID, LeafArea_cm2, nLeafScan) # no duplicates!
 
 # check
 #LeafArea %>% filter(ID == "BNN1844")
-
+  
   
 #****************************************************************************
 #### LEAF TRAITS ####
@@ -79,8 +84,8 @@ leafScanProblems <- read_excel(path = "traits/data/LeafScanProblems.xlsx")
 source("traits/Rdatagathering/CheckSpreadsheet.R")
 
 # Check spreadsheet
-CheckSpreadsheet(traits.raw)
-CheckSpreadsheet(traits)
+# CheckSpreadsheet(traits.raw)
+# CheckSpreadsheet(traits)
 
 
 # Clean trait data
@@ -113,7 +118,13 @@ traits <- traits.raw %>%
          #QUE BB - plot1 Werneria villosa
          Experiment = if_else(ID == "AIR7210", "BB", Experiment)) %>% 
   
-  mutate(Leaf_Thickness_2_mm = if_else(Leaf_Thickness_2_mm == -0.545, 0.545, Leaf_Thickness_2_mm)) %>% 
+  mutate(Leaf_Thickness_1_mm = if_else(ID == "AVH1607", 0.277, Leaf_Thickness_1_mm),
+         Leaf_Thickness_1_mm = if_else(ID == "BIX3249", 0.289, Leaf_Thickness_1_mm),
+         Leaf_Thickness_2_mm = if_else(ID == "BIX3249", 0.296, Leaf_Thickness_2_mm),
+         Leaf_Thickness_2_mm = if_else(ID == "AJA2506", 0.244, Leaf_Thickness_2_mm),
+         Leaf_Thickness_3_mm = if_else(ID == "ADB5258", 0.197, Leaf_Thickness_3_mm),
+         Leaf_Thickness_3_mm = if_else(ID == "CFN6705", 0.181, Leaf_Thickness_3_mm),
+         Leaf_Thickness_2_mm = if_else(Leaf_Thickness_2_mm == -0.545, 0.545, Leaf_Thickness_2_mm)) %>% 
   
   ### fix missing data
   # Site
@@ -162,8 +173,26 @@ traits <- traits.raw %>%
   # remove duplicates
   distinct(ID, Day, Site, Taxon, Genus, Species, Project, Experiment, Plot_ID, Individual_nr, Leaf_nr, Plant_Height_cm, Plant_Length_cm, Bulk_nr_leaves, Length_cm, Wet_Mass_g, Leaf_Thickness_1_mm, Leaf_Thickness_2_mm, Leaf_Thickness_3_mm, Remark) %>% 
   
+  # Fix wrong values
+  mutate(Wet_Mass_g = if_else(ID == "BXD6709", 0.109, Wet_Mass_g),
+         Wet_Mass_g = if_else(ID == "BEF1022", 0.281, Wet_Mass_g)) %>% 
+  
   # Join LeafArea and Traits
   left_join(LeafArea, by = "ID") %>% 
+  
+  # Fix missing leaf area
+  mutate(LeafArea_cm2 = if_else(ID %in% c("AFH6927", "AUV5625", "AVZ7947"), LeafArea_cm2*5/2, LeafArea_cm2),
+         LeafArea_cm2 = if_else(ID %in% c("AJT3939"), LeafArea_cm2*2, LeafArea_cm2),
+         LeafArea_cm2 = if_else(ID %in% c("AVX8706", "AWA4195"), LeafArea_cm2*5/4, LeafArea_cm2),
+         LeafArea_cm2 = if_else(ID %in% c("BCP9007"), LeafArea_cm2*5/1, LeafArea_cm2)) %>% 
+  mutate(LeafArea_cm2 = ifelse(Remark %in% c("double leaf area", "Leaf rolled, double leaf area", "rolled leaf, double leaf area", "rolled leaves, double area", "Rolled - take double area", "Rolled leaf multiple leaf area"), LeafArea_cm2*2, LeafArea_cm2)) %>% 
+  
+  # Flag data
+  mutate(AreaFlag = if_else(ID %in% c("AFH6927", "AUV5625", "AVZ7947", "AJT3939", "AVX8706", "AWA4195", "BCP9007"), "Area estimated", NA_character_),
+         AreaFlag = if_else(ID %in% c("AFL3747", "AJS0144", "AJZ6728", "AZE5327", "BBT3329"), "Leaf too white_Area missing", AreaFlag),
+         AreaFlag = if_else(ID %in% c("BDN3235", "CXX4125"), "Outlier_very_large_leaf", AreaFlag)) %>%
+  
+  mutate(WetFlag = if_else(ID %in% c("BDN3235", "CXX4125"), "Outlier_very_large_leaf", NA_character_)) %>% 
   
   # Remove some special duplicates
   group_by(ID) %>% 
